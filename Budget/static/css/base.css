@@ -1,0 +1,76 @@
+/* =========================
+   Theme Variables
+   ========================= */
+:root {
+    --primary-purple: #c084fc;
+    --glow-purple: rgba(192, 132, 252, 0.6);
+    --bg-color: #0f0f1a;
+    --text-color: #ffffff;
+}
+
+/* =========================
+   Global Styles
+   ========================= */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* =========================
+   Container
+   ========================= */
+.container {
+    width: 90%;
+    margin: auto;
+    padding: 20px;
+}
+
+/* =========================
+   Glow Text
+   ========================= */
+.glow {
+    color: var(--primary-purple);
+    text-shadow: 
+        0 0 8px var(--glow-purple),
+        0 0 15px var(--glow-purple),
+        0 0 25px var(--glow-purple);
+}
+
+/* =========================
+   Button
+   ========================= */
+.btn,
+button {
+    background-color: var(--primary-purple);
+    border: none;
+    padding: 10px 15px;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn:hover,
+button:hover {
+    box-shadow: 0 0 15px var(--glow-purple);
+    transform: scale(1.05);
+}
+
+/* =========================
+   Cards
+   ========================= */
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(192, 132, 252, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    margin: 10px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    box-shadow: 0 0 20px var(--glow-purple);
+}
