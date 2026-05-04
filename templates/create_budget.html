@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Budget - BudgetTracker</title>
+    <style>
+        body { margin: 0; background: #0f0f1a; font-family: 'Segoe UI', sans-serif; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .create-card {
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
+            padding: 40px; border-radius: 30px; border: 1px solid rgba(192, 132, 252, 0.3);
+            width: 90%; max-width: 450px;
+        }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #ccc; font-size: 0.9rem; }
+        input, select {
+            width: 100%; padding: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 12px; color: white; outline: none;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            width: 100%; background: #c084fc; border: none; padding: 15px;
+            border-radius: 15px; color: black; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        .glow { text-shadow: 0 0 10px #c084fc; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="create-card">
+        <h2 class="glow">Create Budget</h2>
+        <form id="budgetForm">
+            <div class="input-group">
+                <label>Category</label>
+                <select id="cat">
+                    <option>Food</option>
+                    <option>Transport</option>
+                    <option>Bills</option>
+                    <option>Shopping</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Budget Amount ($)</label>
+                <input type="number" id="amt" placeholder="e.g. 800" required>
+            </div>
+            <div class="input-group">
+                <label>Alert Me When Reached (%)</label>
+                <input type="number" id="alert" value="80">
+            </div>
+            <button type="submit" class="submit-btn">Create Budget</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('budgetForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newBudget = {
+                category: document.getElementById('cat').value,
+                amount: document.getElementById('amt').value,
+                alert: document.getElementById('alert').value
+            };
+
+            let budgets = JSON.parse(localStorage.getItem('myBudgets')) || [];
+            budgets.push(newBudget);
+            localStorage.setItem('myBudgets', JSON.stringify(budgets));
+
+            window.location.href = 'budgets.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Budgets - BudgetTracker</title>
+    <style>
+        body {
+            margin: 0; background: linear-gradient(rgba(15, 15, 26, 0.95), rgba(15, 15, 26, 0.98)), url('project.jpg');
+            background-size: cover; font-family: 'Segoe UI', sans-serif; color: white; min-height: 100vh;
+        }
+        .navbar { display: flex; justify-content: space-between; padding: 15px 50px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(192, 132, 252, 0.2); }
+        .logo.glow { text-shadow: 0 0 10px #c084fc; font-weight: bold; font-size: 1.5rem; }
+        .nav-links { list-style: none; display: flex; gap: 25px; }
+        .nav-links a { text-decoration: none; color: #ccc; }
+        
+        .container { padding: 100px 20px; display: flex; flex-direction: column; align-items: center; }
+        .header-row { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .create-btn { background: #c084fc; border: none; padding: 10px 20px; border-radius: 12px; color: black; font-weight: bold; cursor: pointer; text-decoration: none; }
+        
+        .budget-card {
+            background: rgba(255, 255, 255, 0.03); width: 100%; max-width: 600px;
+            padding: 20px; border-radius: 20px; border: 1px solid rgba(192, 132, 252, 0.2);
+            margin-bottom: 20px;
+        }
+        .budget-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .category-name { font-weight: bold; color: #c084fc; }
+        
+        .progress-container { background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; overflow: hidden; }
+        .progress-bar { background: #4ade80; height: 100%; width: 0%; transition: 0.5s; }
+        .over-limit { background: #f87171; } 
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo glow">BudgetTracker</div>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Home</a></li>
+            <li><a href="budgets.html" style="color:#c084fc">Budgets</a></li>
+            <li><a href="history.html">History</a></li>
+            
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="header-row">
+            <h2 class="glow">My Budgets</h2>
+            <a href="create_budget.html" class="create-btn">+ Create</a>
+        </div>
+
+        <div id="budgetList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const budgets = JSON.parse(localStorage.getItem('myBudgets')) || [];
+            const transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
+            const list = document.getElementById('budgetList');
+
+            budgets.forEach(b => {
+                const spent = transactions
+                    .filter(t => t.cat.toLowerCase() === b.category.toLowerCase() && t.type === 'ex')
+                    .reduce((acc, t) => acc + Math.abs(parseFloat(t.amt.replace(/[^0-9.-]+/g,""))), 0);
+
+                const percent = Math.min((spent / b.amount) * 100, 100);
+
+                list.innerHTML += `
+                    <div class="budget-card">
+                        <div class="budget-info">
+                            <span class="category-name">${b.category}</span>
+                            <span>$${spent} / $${b.amount}</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar ${spent > b.amount ? 'over-limit' : ''}" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+        
+    </script>
+
+    <script>
+    console.log("بداية المحاولة...");
+    fetch('http://127.0.0.1:8000/budgets/')
+    .then(response => response.json())
+    .then(data => {
+        console.log("وصلت يا وحش!", data);
+        alert("أخيراً نطق! قيمة الميزانية: " + data[0].amount);
+    })
+    .catch(err => {
+        console.error("لسه فيه مشكلة:", err);
+        alert("لسه فيه مشكلة.. بص على الكونسول");
+    });
+</script>
+</body>
+</html>

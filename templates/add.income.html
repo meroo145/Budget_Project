@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Income - BudgetTracker</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(15, 15, 26, 0.9), rgba(15, 15, 26, 0.95)), url('project.jpg');
+            background-size: cover;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+        .income-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #c084fc;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        .close-btn {
+            position: absolute; top: 15px; right: 20px;
+            color: #c084fc; text-decoration: none; font-size: 25px;
+        }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; font-size: 0.8rem; color: #aaaaaa; margin-bottom: 5px; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 10px;
+            color: white; outline: none; box-sizing: border-box;
+        }
+        .save-btn {
+            width: 100%; padding: 15px; background: #a855f7;
+            border: none; border-radius: 12px; color: white;
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .save-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4); }
+    </style>
+</head>
+<body>
+    <div class="income-card">
+        <a href="dashboard.html" class="close-btn">&times;</a>
+        <h2 style="text-shadow: 0 0 10px #c084fc;">Add Income</h2>
+        <form action="dashboard.html">
+            <div class="input-group">
+                <label>Amount</label>
+                <input type="number" placeholder="$0.00" required>
+            </div>
+            <div class="input-group">
+                <label>Description</label>
+                <input type="text" placeholder="Salary, Bonus..." required>
+            </div>
+            <div class="input-field-group">
+                <div class="input-group">
+    <label>Transaction Date</label>
+    <input type="date" id="incomeDate" class="custom-input" required>
+</div>
+            <div class="input-group">
+                <label>Category</label>
+                <select>
+                    <option> Salary</option>
+                    <option> Bonus</option>
+                    <option> Investment</option>
+                </select>
+            </div>
+            <button type="submit" class="save-btn">Save Income</button>
+        </form>
+    </div>
+</body>
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+
+        const amount = document.querySelector('input[type="number"]').value;
+        const description = document.querySelector('input[type="text"]').value;
+        const category = document.querySelector('select').value;
+        const date = document.getElementById('incomeDate').value;
+        const newTransaction = {
+            date: date,
+            desc: description,
+            cat: category,
+            amt: "+$" + amount,
+            type: 'in'
+        };
+        let transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
+        transactions.unshift(newTransaction);
+        localStorage.setItem('myTransactions', JSON.stringify(transactions));
+        window.location.href = 'history.html';
+    });
+</script>
+</html>

@@ -17,3 +17,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class GoalViewSet(viewsets.ModelViewSet):
     queryset = Goal.objects.all()
     serializer_class = GoalSerializer
+
+from django.shortcuts import render
+
+def home_page(request):
+    return render(request, 'home.html')

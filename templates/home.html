@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - BudgetTracker</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <img src="{% static 'project.jpg' %}" alt="Logo">
+</head>
+<body>
+    
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 8%; background: rgba(15, 15, 26, 0.95); position: sticky; top: 0; z-index: 1000;">
+    <div class="logo glow" style="font-size: 1.4rem; font-weight: bold;">BudgetTracker</div>
+    </nav>
+
+<header class="home-header">
+    <h1 class="glow">Welcome to Budget App ✨</h1>
+    <p>Track your expenses, manage your budget, and visualize your financial growth in one place.</p>
+    <div id="auth-buttons">
+    <a href="login.html"><button class="btn">Get Started</button></a>
+    <a href="/my-budgets/" class="btn-get-started">Get Started</a>
+</div>
+</header>
+
+    <section class="features-grid">
+        <div class="feature-card">
+            <span style="font-size: 2rem;">📊</span>
+            <h3 class="glow">Analytics</h3>
+            <p>Track your data and performance with real-time charts and insights.</p>
+        </div>
+        <div class="feature-card">
+            <span style="font-size: 2rem;">📁</span>
+            <h3 class="glow">Projects</h3>
+            <p>Organize and manage your tasks and financial goals effectively.</p>
+        </div>
+        <div class="feature-card">
+            <span style="font-size: 2rem;">⚙️</span>
+            <h3 class="glow">Settings</h3>
+            <p>Customize your application experience to fit your personal needs.</p>
+        </div>
+    </section>
+<script src="style.js"></script>
+</body>
+</html>
