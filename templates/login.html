@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - BudgetTracker</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 
     <style>
         body {
@@ -84,12 +85,12 @@
     <div class="login-container">
         <div class="card login-card">
 
-            <a href="home.html" class="close-link">&times;</a>
+            <a href="{% url 'home' %}" class="close-link">&times;</a>
 
             <h1 class="glow">BudgetTracker</h1>
             <p style="color: #ccc; margin-bottom: 30px;">Login to your account</p>
 
-            <form id="loginForm">
+            <form id="loginForm" action="{% url 'dashboard_url' %}" method="GET">
                 <input type="email" class="input-field" placeholder="Email Address" required>
                 <input type="password" class="input-field" placeholder="Password" required>
                 
@@ -100,15 +101,13 @@
 
             <p style="margin-top: 25px; font-size: 0.9rem;">
                 New here? 
-                <a href="sign.html" class="glow" style="text-decoration: none;">
-                    Create an Account
-                </a>
+                <a href="{% url 'signup_url' %}">Create an Account</a>
             </p>
 
         </div>
     </div>
 
-    <script src="style.js"></script>
+    <script src="{% static 'style.js' %}"></script>
 
 </body>
 </html>

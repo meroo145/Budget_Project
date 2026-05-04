@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -116,10 +117,10 @@
 
 <div class="signup-container">
     <div class="signup-card">
-        <a href="home.html" class="close-link">&times;</a>
+        <a href="{% url 'home' %}" class="close-link">&times;</a>
         <h2 class="glow">Create Account</h2>
         
-        <form id="registerForm">
+        <form id="registerForm" action="{% url 'dashboard_url' %}" method="GET">
             <input type="text" id="name" class="input-field" placeholder="Full Name">
             <input type="email" id="email" class="input-field" placeholder="Email Address">
             <input type="password" id="password" class="input-field" placeholder="Password">
@@ -127,7 +128,7 @@
             
             <span id="errorMsg" class="error"></span>
             
-            <button type="submit" class="btn-submit">Sign Up</button>
+            <a href="{% url 'dashboard_url' %}" class="btn-submit" style="display: block; text-align: center; text-decoration: none;">Sign Up</a>
         </form>
     </div>
 </div>
