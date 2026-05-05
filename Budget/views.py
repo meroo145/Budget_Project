@@ -32,3 +32,21 @@ def signup_page(request):
 
 def dashboard_page(request):
     return render(request, 'dashboard.html')
+
+def analysis_page(request):
+    return render(request, 'analysis.html') 
+
+def history_page(request):
+    return render(request, 'history.html')
+
+def budgets_page(request):
+    return render(request, 'budgets.html')
+
+def add_expense_view(request):
+    return render(request, 'add.expense.html')
+
+def add_income_view(request):
+    return render(request, 'add.income.html')
+
+def create_budget_view(request):
+    return render(request, 'create_budget.html')

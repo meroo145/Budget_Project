@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,10 +119,9 @@
     <nav class="navbar">
         <div class="logo glow">BudgetTracker</div>
         <ul class="nav-links">
-            <li><a href="dashboard.html">Home</a></li>
-            <li><a href= "analysis.html" >Analysis</a></li>
-            <!-- <li><a href="history.html" class="active">History</a></li> -->
-            <li><a href="budgets.html">Budgets</a></li>
+            <li><a href="{% url 'dashboard_url' %}">Home</a></li>
+            <li><a href="{% url 'analysis_url' %}">Analysis</a></li>
+            <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
         </ul>
        
     </nav>

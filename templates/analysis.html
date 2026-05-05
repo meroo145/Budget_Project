@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,12 +72,11 @@
     <nav class="navbar">
         <div class="logo">BudgetTracker</div>
         <ul class="nav-links">
-            <li><a href="dashboard.html">Home</a></li>
-            <!-- <li><a href="analysis.html" class="active">Analysis</a></li> -->
-            <li><a href="history.html">History</a></li>
-            <li><a href="budgets.html">Budgets</a></li>
+            <li><a href="{% url 'dashboard_url' %}">Home</a></li>
+            <li><a href="{% url 'history_url' %}">History</a></li>
+            <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
         </ul>
-        <button style="background:#ff4d4d; border:none; color:white; padding:8px 15px; border-radius:5px; cursor:pointer;">Logout</button>
+        
     </nav>
 
     <div class="container">

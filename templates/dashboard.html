@@ -14,17 +14,17 @@
     <div class="logo glow">BudgetTracker</div>
     
     <ul>
-        <li><a href="home.html">Home</a></li>
-        <li><a href="analysis.html">Analysis</a></li>
-        <li><a href="history.html">History</a></li>
-        <li><a href="budgets.html">Budgets</a></li>
+        <li><a href="{% url 'dashboard_url' %}">Home</a></li>
+        <li><a href="{% url 'analysis_url' %}">Analysis</a></li>
+        <li><a href="{% url 'history_url' %}">History</a></li>
+        <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
     </ul>
 
     <div class="nav-buttons">
-        <a href="home.html" style="text-decoration: none;">
-            <button class="btn btn-logout" onclick="logout()">Log Out</button>
-        </a>
-    </div>
+    <a href="{% url 'home' %}" class="btn btn-logout" style="text-decoration: none; display: inline-block; line-height: normal;">
+        Log Out
+    </a>
+</div>
 </nav>
 
 <div class="container">
@@ -45,13 +45,13 @@
         <div class="card">
             <h3 class="glow">Monthly Income</h3>
             <h2 style="font-size: 2rem;">$3,000</h2>
-            <button class="btn" style="margin-top: 10px;">View History</button>
+            
         </div>
 
         <div class="card">
             <h3 class="glow">Monthly Expenses</h3>
             <h2 style="font-size: 2rem; color: #f87171;">$1,850</h2>
-            <button class="btn" style="margin-top: 10px;">Check Limits</button>
+            
         </div>
 
     </div>
@@ -61,11 +61,11 @@
 
         <div class="buttons-group">
             
-            <a href="add.expense.html" class="action-btn no-underline">
+            <a href="{% url 'add_expense_url' %}" class="action-btn">
                 + Add Expense
             </a>
 
-            <a href="add.income.html" class="action-btn no-underline">
+            <a href="{% url 'add_income_url' %}" class="action-btn">
                 + Add Income
             </a>
 

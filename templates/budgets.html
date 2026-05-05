@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,9 +36,9 @@
     <nav class="navbar">
         <div class="logo glow">BudgetTracker</div>
         <ul class="nav-links">
-            <li><a href="dashboard.html">Home</a></li>
-            <li><a href="budgets.html" style="color:#c084fc">Budgets</a></li>
-            <li><a href="history.html">History</a></li>
+            <li><a href="{% url 'dashboard_url' %}">Home</a></li>
+            <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
+            <li><a href="{% url 'history_url' %}">History</a></li>
             
         </ul>
     </nav>
@@ -45,7 +46,10 @@
     <div class="container">
         <div class="header-row">
             <h2 class="glow">My Budgets</h2>
-            <a href="create_budget.html" class="create-btn">+ Create</a>
+            <!-- ده الكود الصح يا برنس، نفس الشكل الأصلي بالظبط -->
+            <a href="{% url 'create_budget_url' %}" class="create-btn" style="text-decoration: none;">
+                + Create
+            </a>
         </div>
 
         <div id="budgetList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
@@ -80,19 +84,9 @@
         });
         
     </script>
-
+        
     <script>
-    console.log("بداية المحاولة...");
-    fetch('http://127.0.0.1:8000/budgets/')
-    .then(response => response.json())
-    .then(data => {
-        console.log("وصلت يا وحش!", data);
-        alert("أخيراً نطق! قيمة الميزانية: " + data[0].amount);
-    })
-    .catch(err => {
-        console.error("لسه فيه مشكلة:", err);
-        alert("لسه فيه مشكلة.. بص على الكونسول");
-    });
+    
 </script>
 </body>
 </html>

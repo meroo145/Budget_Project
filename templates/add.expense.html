@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,7 +86,7 @@
 <body>
 
     <div class="expense-card">
-        <a href="dashboard.html" class="close-btn">&times;</a>
+        <a href="{% url 'dashboard_url' %}" class="close-btn">&times;</a>
 
         <h2 style="text-shadow: 0 0 10px #c084fc;">Add Expense</h2>
 
@@ -115,7 +116,9 @@
                 </select>
             </div>
 
-            <button type="submit" class="save-btn">Save Expense</button>
+            <a href="{% url 'history_url' %}" style="text-decoration: none;">
+                <button type="button" class="save-btn" style="width: 100%;">Save Expense</button>
+            </a>
         </form>
     </div>
 
