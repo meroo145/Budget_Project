@@ -2,205 +2,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Create Account</title>
-
-  <style>
-    body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            background: linear-gradient(rgba(15, 15, 26, 0.8), rgba(15, 15, 26, 0.9)), 
-                        url('project.jpg');
-            background-size: cover;
-            background-position: center;
+    <meta charset="UTF-8">
+    <title>Create Account - BudgetTracker</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            background: linear-gradient(rgba(15, 15, 26, 0.8), rgba(15, 15, 26, 0.9)),
+                        url("{% static 'project.jpg' %}");
+            background-size: cover; background-position: center;
             font-family: 'Segoe UI', sans-serif;
         }
-
         .signup-card {
-            width: 100%;
-            max-width: 400px;
-            padding: 40px;
-            text-align: center;
-            backdrop-filter: blur(15px);
+            width: 100%; max-width: 400px; padding: 40px;
+            text-align: center; backdrop-filter: blur(15px);
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(115, 12, 218, 0.4);
-            border-radius: 20px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            position: relative;
+            border-radius: 20px; position: relative;
             animation: slideUp 0.6s ease-out;
         }
-
-        .signup-card h2 {
-            color: white;
-            font-size: 2rem;
-            margin-bottom: 30px;
-            text-shadow: 0 0 10px rgba(123, 19, 227, 0.5);
-        }
-
+        .signup-card h2 { color: white; font-size: 2rem; margin-bottom: 30px; text-shadow: 0 0 10px rgba(123, 19, 227, 0.5); }
         .input-field {
-            width: 100%; 
-            padding: 15px 20px; 
-            margin: 15px 0; 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(192, 132, 252, 0.3); 
-            border-radius: 8px; 
-            color: white;
-            font-size: 1rem; 
-            outline: none;
-            transition: 0.3s ease; 
-            box-sizing: border-box; 
+            width: 100%; padding: 15px 20px; margin: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 8px; color: white; font-size: 1rem;
+            outline: none; transition: 0.3s ease; box-sizing: border-box;
         }
-
-        .input-field:focus {
-            border-color: var(--primary-purple); 
-            box-shadow: 0 0 10px rgba(117, 5, 229, 0.5); 
-            background: rgba(255, 255, 255, 0.1); 
-        }
-
         .btn-submit {
-            width: 100%;
-            padding: 15px 20px; 
-            margin: 15px 0; 
-           background: rgba(255, 255, 255, 0.05); 
-           border: 1px solid rgba(192, 132, 252, 0.3); 
-            border-radius: 8px; 
-            color: white;
-             font-size: 1rem;
-            outline: none;
-            transition: 0.3s ease; 
-            box-sizing: border-box; 
+            width: 100%; padding: 15px; margin-top: 15px;
+            background: #a855f7; border: none; border-radius: 8px;
+            color: white; font-size: 1rem; cursor: pointer; transition: 0.3s;
         }
-
-        .btn-submit:hover {
-            background: #9333ea;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
-        }
-
+        .btn-submit:hover { background: #9333ea; transform: translateY(-2px); }
         .close-link {
-            position: absolute;
-            top: 15px; 
-            right: 20px; 
-            font-size: 30px; 
-            color: var(--primary-purple); 
-            text-decoration: none; 
-            line-height: 1;
-            transition: 0.3s;
-            z-index: 100; 
-            cursor: pointer;
+            position: absolute; top: 15px; right: 20px;
+            font-size: 30px; color: #c084fc;
+            text-decoration: none; transition: 0.3s;
         }
-
-        .close-link:hover {
-            transform: scale(1.2); 
-            text-shadow: 0 0 15px var(--primary-purple); 
-            color: rgb(216, 4, 4); 
-        }
-
-        .error {
-            color: #ff5f5f;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: block;
-            text-align: left;
-        }
-
+        .close-link:hover { color: rgb(216, 4, 4); transform: scale(1.2); }
+        .error-msg { color: #f87171; font-size: 0.85rem; margin: 5px 0; }
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-</style>
-
-<div class="signup-container">
+    </style>
+</head>
+<body>
     <div class="signup-card">
         <a href="{% url 'home' %}" class="close-link">&times;</a>
-        <h2 class="glow">Create Account</h2>
-        
-        <form id="registerForm" action="{% url 'dashboard_url' %}" method="GET">
-            <input type="text" id="name" class="input-field" placeholder="Full Name">
-            <input type="email" id="email" class="input-field" placeholder="Email Address">
-            <input type="password" id="password" class="input-field" placeholder="Password">
-            <input type="password" id="confirmPassword" class="input-field" placeholder="Confirm Password">
-            
-            <span id="errorMsg" class="error"></span>
-            
-            <a href="{% url 'dashboard_url' %}" class="btn-submit" style="display: block; text-align: center; text-decoration: none;">Sign Up</a>
-        </form>
+        <h2 style="text-shadow: 0 0 10px #c084fc; color: #c084fc;">Create Account</h2>
+
+        {% if messages %}
+            {% for msg in messages %}
+                <p class="error-msg">{{ msg }}</p>
+            {% endfor %}
+        {% endif %}
+
+       <form method="POST" action="{% url 'signup_url' %}">
+    {% csrf_token %}
+    <input type="text" name="name" class="input-field" placeholder="Full Name" required>
+    <input type="email" name="email" class="input-field" placeholder="Email" required>
+    <input type="password" name="password" class="input-field" placeholder="Password" required>
+    <input type="password" name="confirmPassword" class="input-field" placeholder="Confirm Password" required>
+    <button type="submit" class="btn-submit">Create Account</button>
+</form>
+
+        <p style="margin-top: 20px; color: #ccc; font-size: 0.9rem;">
+            Already have an account? <a href="{% url 'login_url' %}" style="color:#c084fc;">Login</a>
+        </p>
     </div>
-</div>
-</head>
-
-<body>
-<script>
-function logout() {
-    localStorage.removeItem('isLoggedIn');
-    window.location.href = 'home.html';
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-        
-            let name = document.getElementById("name").value.trim();
-            let email = document.getElementById("email").value.trim();
-            let password = document.getElementById("password").value;
-            let confirmPassword = document.getElementById("confirmPassword").value;
-            let errorMsg = document.getElementById("errorMsg");
-
-            if (name === "" || email === "" || password === "" || confirmPassword === "") {
-                errorMsg.textContent = "Please fill all fields";
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                errorMsg.textContent = "Passwords do not match!";
-                return;
-            }
-
-            localStorage.setItem('isLoggedIn', 'true');
-            window.location.href = "dashboard.html";
-        });
-    }
-
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.onsubmit = function(e) {
-            e.preventDefault();
-            localStorage.setItem('isLoggedIn', 'true');
-            window.location.href = 'dashboard.html';
-        };
-    }
-
-    const authContainer = document.getElementById('auth-buttons');
-    if (authContainer) {
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        if (isLoggedIn === 'true') {
-            authContainer.innerHTML = `
-                <a href="dashboard.html" style="text-decoration: none;">
-                    <button class="btn" style="margin-right: 10px;">Dashboard</button>
-                </a>
-                <button class="btn btn-logout" onclick="logout()">Log Out</button>
-            `;
-        }
-    }
-
-    if (window.location.pathname.includes('dashboard.html')) {
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        if (isLoggedIn !== 'true') {
-            window.location.href = 'home.html';
-        }
-    }
-});
-  
-</script>
-
 </body>
 </html>

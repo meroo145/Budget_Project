@@ -6,87 +6,150 @@
     <title>My Budgets - BudgetTracker</title>
     <style>
         body {
-            margin: 0; background: linear-gradient(rgba(15, 15, 26, 0.95), rgba(15, 15, 26, 0.98)), url('project.jpg');
+            margin: 0;
+            background: linear-gradient(rgba(15,15,26,0.95), rgba(15,15,26,0.98)), url("{% static 'project.jpg' %}");
             background-size: cover; font-family: 'Segoe UI', sans-serif; color: white; min-height: 100vh;
         }
-        .navbar { display: flex; justify-content: space-between; padding: 15px 50px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(192, 132, 252, 0.2); }
-        .logo.glow { text-shadow: 0 0 10px #c084fc; font-weight: bold; font-size: 1.5rem; }
-        .nav-links { list-style: none; display: flex; gap: 25px; }
-        .nav-links a { text-decoration: none; color: #ccc; }
-        
-        .container { padding: 100px 20px; display: flex; flex-direction: column; align-items: center; }
-        .header-row { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        
-        .create-btn { background: #c084fc; border: none; padding: 10px 20px; border-radius: 12px; color: black; font-weight: bold; cursor: pointer; text-decoration: none; }
-        
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 50px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(192,132,252,0.2); }
+        .logo { text-shadow: 0 0 10px #c084fc; font-weight: bold; font-size: 1.5rem; }
+        .nav-links { list-style: none; display: flex; gap: 25px; margin: 0; padding: 0; }
+        .nav-links a { text-decoration: none; color: #ccc; transition: 0.3s; }
+        .nav-links a:hover { color: #c084fc; }
+        .container { padding: 100px 20px 50px; display: flex; flex-direction: column; align-items: center; }
+        .header-row { width: 100%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .create-btn { background: #c084fc; border: none; padding: 10px 22px; border-radius: 12px; color: black; font-weight: bold; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .create-btn:hover { background: #a855f7; color: white; }
         .budget-card {
-            background: rgba(255, 255, 255, 0.03); width: 100%; max-width: 600px;
-            padding: 20px; border-radius: 20px; border: 1px solid rgba(192, 132, 252, 0.2);
-            margin-bottom: 20px;
+            background: rgba(255,255,255,0.03); width: 100%; max-width: 650px;
+            padding: 22px; border-radius: 20px; border: 1px solid rgba(192,132,252,0.2);
+            margin-bottom: 20px; transition: 0.3s;
         }
-        .budget-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .category-name { font-weight: bold; color: #c084fc; }
-        
-        .progress-container { background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; overflow: hidden; }
-        .progress-bar { background: #4ade80; height: 100%; width: 0%; transition: 0.5s; }
-        .over-limit { background: #f87171; } 
+        .budget-card:hover { border-color: rgba(192,132,252,0.5); }
+        .budget-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .category-name { font-weight: bold; color: #c084fc; font-size: 1.1rem; }
+        .budget-amounts { font-size: 0.9rem; color: #aaa; }
+        .progress-container { background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.8s ease; border-radius: 6px; }
+        .progress-green  { background: linear-gradient(90deg, #4ade80, #22c55e); }
+        .progress-yellow { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .progress-red    { background: linear-gradient(90deg, #f87171, #ef4444); }
+        .budget-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .remaining-text { color: #aaa; }
+        .remaining-text span { color: #4ade80; font-weight: bold; }
+        .overlimit-text span { color: #f87171; font-weight: bold; }
+        .alert-badge { background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; color: #fbbf24; padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; }
+        .danger-badge { background: rgba(248,113,113,0.15); border: 1px solid #f87171; color: #f87171; padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; }
+        .delete-budget-btn { color: #f87171; text-decoration: none; font-size: 0.8rem; opacity: 0.7; transition: 0.3s; }
+        .delete-budget-btn:hover { opacity: 1; }
+        .msg { padding: 10px 20px; border-radius: 10px; margin-bottom: 20px; width: 100%; max-width: 650px; box-sizing: border-box; }
+        .msg-success { background: rgba(74,222,128,0.15); border: 1px solid #4ade80; color: #4ade80; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo glow">BudgetTracker</div>
-        <ul class="nav-links">
-            <li><a href="{% url 'dashboard_url' %}">Home</a></li>
-            <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
-            <li><a href="{% url 'history_url' %}">History</a></li>
-            
-        </ul>
-    </nav>
 
-    <div class="container">
-        <div class="header-row">
-            <h2 class="glow">My Budgets</h2>
-            <!-- ده الكود الصح يا برنس، نفس الشكل الأصلي بالظبط -->
-            <a href="{% url 'create_budget_url' %}" class="create-btn" style="text-decoration: none;">
-                + Create
+    <!-- Navbar Wrapper -->
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 30px; background-color: #0f0a19; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: sans-serif;">
+
+    <!-- Left Side: Logo & Links -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" style="text-decoration: none; font-size: 20px; font-weight: bold; color: #a855f7; margin-right: 15px;">
+            BudgetTracker
+        </a>
+
+        {% if user.is_authenticated %}
+            <!-- Links and Profile all in one Row -->
+            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Dashboard
             </a>
-        </div>
-
-        <div id="budgetList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            </div>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Transactions
+            </a>
+            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Goals
+            </a>
+            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Analysis
+            </a>
+            
+            <!-- Profile Button (Exactly like the others) -->
+            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                my profile
+            </a>
+            <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Budgets
+            </a>
+             <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                History
+            </a>
+        {% endif %}
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const budgets = JSON.parse(localStorage.getItem('myBudgets')) || [];
-            const transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
-            const list = document.getElementById('budgetList');
+    <!-- Right Side: Logout -->
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout_url' %}" style="text-decoration: none; color: #f87171; font-size: 14px; font-weight: bold;">
+                Logout
+            </a>
+        {% else %}
+            <a href="{% url 'login_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; font-size: 14px;">Login</a>
+            <a href="{% url 'signup_url' %}" style="text-decoration: none; color: white; background: #9333ea; padding: 8px 16px; border-radius: 8px; font-size: 14px;">Sign Up</a>
+        {% endif %}
+    </div>
 
-            budgets.forEach(b => {
-                const spent = transactions
-                    .filter(t => t.cat.toLowerCase() === b.category.toLowerCase() && t.type === 'ex')
-                    .reduce((acc, t) => acc + Math.abs(parseFloat(t.amt.replace(/[^0-9.-]+/g,""))), 0);
+</div>
 
-                const percent = Math.min((spent / b.amount) * 100, 100);
 
-                list.innerHTML += `
-                    <div class="budget-card">
-                        <div class="budget-info">
-                            <span class="category-name">${b.category}</span>
-                            <span>$${spent} / $${b.amount}</span>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-bar ${spent > b.amount ? 'over-limit' : ''}" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-        });
-        
-    </script>
-        
-    <script>
-    
-</script>
+
+    <div class="container">
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="msg msg-success">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="header-row">
+            <h2 style="text-shadow: 0 0 10px #c084fc; margin: 0;">My Budgets</h2>
+            <a href="{% url 'create_budget_url' %}" class="create-btn">+ Create Budget</a>
+        </div>
+
+        {% for b in budget_data %}
+        <div class="budget-card">
+            <div class="budget-info">
+                <span class="category-name">{{ b.category }}</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    {% if b.overlimit %}
+                        <span class="danger-badge">🔴 Over Limit!</span>
+                    {% elif b.alert %}
+                        <span class="alert-badge">⚠️ Near Limit</span>
+                    {% endif %}
+                    <a href="{% url 'delete_budget' b.id %}" class="delete-budget-btn"
+                       onclick="return confirm('Delete this budget?')">🗑 Delete</a>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar {% if b.overlimit %}progress-red{% elif b.alert %}progress-yellow{% else %}progress-green{% endif %}"
+                     style="width: {{ b.percent }}%">
+                </div>
+            </div>
+
+            <div class="budget-footer">
+                <span class="budget-amounts">${{ b.spent }} spent of ${{ b.amount }}</span>
+                {% if b.overlimit %}
+                    <span class="overlimit-text">Over by <span>${{ b.spent|add:b.amount }}</span></span>
+                {% else %}
+                    <span class="remaining-text">Remaining: <span>${{ b.remaining }}</span></span>
+                {% endif %}
+                <span style="color: #aaa;">{{ b.percent }}%</span>
+            </div>
+        </div>
+        {% empty %}
+            <div style="text-align: center; margin-top: 50px;">
+                <p style="color: #aaa; font-size: 1.1rem;">No budgets yet!</p>
+                <a href="{% url 'create_budget_url' %}" class="create-btn">+ Create your first budget</a>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

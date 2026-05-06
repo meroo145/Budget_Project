@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - BudgetTracker</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
-
     <style>
         body {
             display: flex;
@@ -15,17 +14,11 @@
             height: 100vh;
             overflow: hidden;
             background: linear-gradient(rgba(15, 15, 26, 0.8), rgba(15, 15, 26, 0.9)), 
-                        url('project.jpg');
+                        url("{% static 'project.jpg' %}");
             background-size: cover;
             background-position: center;
         }
-
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-        }
-
+        .login-container { width: 100%; max-width: 400px; padding: 20px; }
         .login-card {
             text-align: center;
             backdrop-filter: blur(10px);
@@ -33,81 +26,55 @@
             animation: slideUp 0.6s ease-out;
             position: relative;
         }
-
         .input-field {
-            width: 100%; 
-            padding: 15px 20px; 
-            margin: 15px 0; 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(192, 132, 252, 0.3); 
-            border-radius: 8px; 
-            color: white;
-            font-size: 1rem; 
-            outline: none;
-            transition: 0.3s ease; 
-            box-sizing: border-box; 
+            width: 100%; padding: 15px 20px; margin: 15px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 8px; color: white; font-size: 1rem;
+            outline: none; transition: 0.3s ease; box-sizing: border-box;
         }
-
         .input-field:focus {
-            border-color: var(--primary-purple); 
-            box-shadow: 0 0 10px rgba(192, 132, 252, 0.5); 
-            background: rgba(255, 255, 255, 0.1); 
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+            background: rgba(255, 255, 255, 0.1);
         }
-
         .close-link {
-            position: absolute;
-            top: 15px; 
-            right: 20px; 
-            font-size: 30px; 
-            color: var(--primary-purple); 
-            text-decoration: none; 
-            line-height: 1;
-            transition: 0.3s;
-            z-index: 100; 
-            cursor: pointer;
+            position: absolute; top: 15px; right: 20px;
+            font-size: 30px; color: var(--primary-purple);
+            text-decoration: none; line-height: 1; transition: 0.3s; cursor: pointer;
         }
-
-        .close-link:hover {
-            transform: scale(1.2); 
-            text-shadow: 0 0 15px var(--primary-purple); 
-            color: rgb(216, 4, 4); 
-        }
-
+        .close-link:hover { transform: scale(1.2); color: rgb(216, 4, 4); }
+        .error-msg { color: #f87171; font-size: 0.85rem; margin: 5px 0; }
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-
 <body>
-
     <div class="login-container">
         <div class="card login-card">
-
             <a href="{% url 'home' %}" class="close-link">&times;</a>
-
             <h1 class="glow">BudgetTracker</h1>
             <p style="color: #ccc; margin-bottom: 30px;">Login to your account</p>
 
-            <form id="loginForm" action="{% url 'dashboard_url' %}" method="GET">
-                <input type="email" class="input-field" placeholder="Email Address" required>
-                <input type="password" class="input-field" placeholder="Password" required>
-                
-                <button type="submit" class="btn" style="width: 100%; margin-top: 20px; padding: 12px; font-weight: bold;">
-                    Sign In
-                </button>
-            </form>
+            {% if messages %}
+                {% for msg in messages %}
+                    <p class="error-msg">{{ msg }}</p>
+                {% endfor %}
+            {% endif %}
 
+         <form method="POST" action="{% url 'login_url' %}">
+    {% csrf_token %}
+    <input type="email" name="email" class="input-field" placeholder="Email Address" required>
+    <input type="password" name="password" class="input-field" placeholder="Password" required>
+    
+    <button type="submit" class="btn">Sign In</button>
+</form>
             <p style="margin-top: 25px; font-size: 0.9rem;">
-                New here? 
-                <a href="{% url 'signup_url' %}">Create an Account</a>
+                New here? <a href="{% url 'signup_url' %}" style="color:#c084fc;">Create an Account</a>
             </p>
-
         </div>
     </div>
-
-    <script src="{% static 'style.js' %}"></script>
-
 </body>
 </html>

@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Goals - BudgetTracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(rgba(15,15,26,0.92), rgba(15,15,26,0.97)),
+                        url("{% static 'project.jpg' %}");
+            background-size: cover; background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif; color: white; min-height: 100vh;
+        }
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 50px; background: rgba(0,0,0,0.4); backdrop-filter: blur(15px);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+            border-bottom: 1px solid rgba(192,132,252,0.25); box-sizing: border-box;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 15px #c084fc; color: #c084fc; }
+        .nav-links { list-style: none; display: flex; gap: 30px; }
+        .nav-links a { text-decoration: none; color: #ccc; transition: 0.3s; font-size: 0.9rem; }
+        .nav-links a:hover { color: #c084fc; }
+        .container { padding: 110px 20px 60px; max-width: 900px; margin: auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
+        .page-title { font-size: 2rem; text-shadow: 0 0 15px #c084fc; color: #c084fc; }
+
+        /* Create Goal Form */
+        .create-form {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(192,132,252,0.3);
+            border-radius: 20px; padding: 30px; margin-bottom: 35px;
+            animation: fadeInDown 0.5s ease;
+        }
+        .create-form h3 { color: #c084fc; margin-bottom: 20px; font-size: 1.1rem; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 0.8rem; color: #aaa; }
+        .form-group input {
+            padding: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(192,132,252,0.3); border-radius: 10px;
+            color: white; outline: none; font-size: 0.95rem; transition: 0.3s;
+        }
+        .form-group input:focus { border-color: #c084fc; box-shadow: 0 0 10px rgba(192,132,252,0.2); }
+        .submit-btn {
+            margin-top: 20px; padding: 13px 35px; background: #a855f7;
+            border: none; border-radius: 12px; color: white;
+            font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1rem;
+        }
+        .submit-btn:hover { background: #9333ea; transform: translateY(-2px); box-shadow: 0 5px 20px rgba(168,85,247,0.4); }
+
+        /* Goal Cards */
+        .goals-grid { display: grid; gap: 20px; }
+        .goal-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(192,132,252,0.2);
+            border-radius: 20px; padding: 25px; transition: 0.3s;
+            animation: fadeInUp 0.4s ease;
+        }
+        .goal-card:hover { border-color: rgba(192,132,252,0.5); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168,85,247,0.1); }
+        .goal-card.completed { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.03); }
+        .goal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+        .goal-name { font-size: 1.2rem; font-weight: bold; color: white; }
+        .goal-badge-completed { background: rgba(74,222,128,0.15); border: 1px solid #4ade80; color: #4ade80; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; }
+        .goal-badge-active    { background: rgba(192,132,252,0.15); border: 1px solid #c084fc; color: #c084fc; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; }
+        .goal-amounts { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; color: #aaa; }
+        .goal-amounts strong { color: white; }
+        .progress-container { background: rgba(255,255,255,0.08); height: 14px; border-radius: 7px; overflow: hidden; margin-bottom: 15px; }
+        .progress-bar { height: 100%; border-radius: 7px; transition: width 1s ease; }
+        .progress-purple { background: linear-gradient(90deg, #a855f7, #c084fc); }
+        .progress-green  { background: linear-gradient(90deg, #4ade80, #22c55e); }
+        .goal-footer { display: flex; justify-content: space-between; align-items: center; }
+        .goal-info { font-size: 0.85rem; color: #aaa; }
+        .goal-info span { color: #c084fc; font-weight: bold; }
+        .goal-actions { display: flex; gap: 10px; align-items: center; }
+
+        /* Add Savings Form inline */
+        .add-savings-form { display: flex; gap: 8px; align-items: center; }
+        .add-savings-form input {
+            padding: 8px 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(192,132,252,0.3); border-radius: 8px;
+            color: white; outline: none; width: 110px; font-size: 0.85rem;
+        }
+        .add-savings-btn {
+            padding: 8px 15px; background: rgba(74,222,128,0.15);
+            border: 1px solid #4ade80; border-radius: 8px;
+            color: #4ade80; cursor: pointer; font-size: 0.85rem; transition: 0.3s;
+        }
+        .add-savings-btn:hover { background: rgba(74,222,128,0.3); }
+        .delete-btn {
+            padding: 8px 12px; background: rgba(248,113,113,0.1);
+            border: 1px solid rgba(248,113,113,0.3); border-radius: 8px;
+            color: #f87171; cursor: pointer; font-size: 0.8rem; transition: 0.3s; text-decoration: none;
+        }
+        .delete-btn:hover { background: rgba(248,113,113,0.25); }
+        .deadline-text { font-size: 0.8rem; color: #888; margin-top: 5px; }
+
+        /* Messages */
+        .msg { padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; animation: fadeInDown 0.3s ease; }
+        .msg-success { background: rgba(74,222,128,0.12); border: 1px solid #4ade80; color: #4ade80; }
+        .msg-error   { background: rgba(248,113,113,0.12); border: 1px solid #f87171; color: #f87171; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #aaa; }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 15px; }
+        .empty-state p { font-size: 1.1rem; margin-bottom: 20px; }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp   { from { opacity: 0; transform: translateY(20px);  } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<!-- Navbar Start -->
+
+
+<!-- Navbar Wrapper -->
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 30px; background-color: #0f0a19; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: sans-serif;">
+
+    <!-- Left Side: Logo & Links -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" style="text-decoration: none; font-size: 20px; font-weight: bold; color: #a855f7; margin-right: 15px;">
+            BudgetTracker
+        </a>
+
+        {% if user.is_authenticated %}
+            <!-- Links and Profile all in one Row -->
+            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Dashboard
+            </a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Transactions
+            </a>
+            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Goals
+            </a>
+            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Analysis
+            </a>
+            
+            <!-- Profile Button (Exactly like the others) -->
+            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                my profile
+            </a>
+                        <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Budgets
+            </a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                History
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Right Side: Logout -->
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout_url' %}" style="text-decoration: none; color: #f87171; font-size: 14px; font-weight: bold;">
+                Logout
+            </a>
+        {% else %}
+            <a href="{% url 'login_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; font-size: 14px;">Login</a>
+            <a href="{% url 'signup_url' %}" style="text-decoration: none; color: white; background: #9333ea; padding: 8px 16px; border-radius: 8px; font-size: 14px;">Sign Up</a>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Navbar End -->
+
+    <div class="container">
+
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="msg {% if 'error' in msg.tags %}msg-error{% else %}msg-success{% endif %}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="page-header">
+            <h1 class="page-title">🎯 Financial Goals</h1>
+        </div>
+
+        <!-- Create Goal Form -->
+        <div class="create-form">
+            <h3>+ Set a New Goal</h3>
+            <form method="POST" action="{% url 'create_goal_url' %}">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Goal Name</label>
+                        <input type="text" name="name" placeholder="e.g. New Laptop" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Amount ($)</label>
+                        <input type="number" name="target_amount" placeholder="e.g. 1500" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline (optional)</label>
+                        <input type="date" name="deadline">
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">🎯 Create Goal</button>
+            </form>
+        </div>
+
+        <!-- Goals List -->
+        <div class="goals-grid">
+            {% for goal in goals %}
+            <div class="goal-card {% if goal.is_completed %}completed{% endif %}">
+                <div class="goal-header">
+                    <div>
+                        <div class="goal-name">{{ goal.name }}</div>
+                        {% if goal.deadline %}
+                            <div class="deadline-text">📅 Deadline: {{ goal.deadline }}</div>
+                        {% endif %}
+                    </div>
+                    {% if goal.is_completed %}
+                        <span class="goal-badge-completed">✅ Completed!</span>
+                    {% else %}
+                        <span class="goal-badge-active">🔄 In Progress</span>
+                    {% endif %}
+                </div>
+
+                <div class="goal-amounts">
+                    <span>Saved: <strong style="color:#4ade80;">${{ goal.saved_amount }}</strong></span>
+                    <span>Target: <strong>${{ goal.target_amount }}</strong></span>
+                    <span>Remaining: <strong style="color:#f87171;">${{ goal.remaining }}</strong></span>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar {% if goal.is_completed %}progress-green{% else %}progress-purple{% endif %}"
+                         style="width: {{ goal.percent }}%">
+                    </div>
+                </div>
+
+                <div class="goal-footer">
+                    <div class="goal-info">
+                        Progress: <span>{{ goal.percent }}%</span>
+                    </div>
+                    <div class="goal-actions">
+                        {% if not goal.is_completed %}
+                        <form method="POST" action="{% url 'add_savings_url' goal.pk %}" class="add-savings-form">
+                            {% csrf_token %}
+                            <input type="number" name="amount" placeholder="Add $" min="1" step="0.01">
+                            <button type="submit" class="add-savings-btn">+ Add</button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'delete_goal_url' goal.pk %}" class="delete-btn"
+                           onclick="return confirm('Delete this goal?')">🗑</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <div class="icon">🎯</div>
+                <p>No goals yet! Start by setting your first financial goal.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

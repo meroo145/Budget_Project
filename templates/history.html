@@ -5,132 +5,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transaction History - BudgetTracker</title>
-    
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(rgba(15, 15, 26, 0.9), rgba(15, 15, 26, 0.95)), url('project.jpg');
-            background-size: cover;
-            background-attachment: fixed;
-            font-family: 'Segoe UI', sans-serif;
-            color: white;
-            min-height: 100vh;
+            margin: 0; padding: 0;
+            background: linear-gradient(rgba(15,15,26,0.9), rgba(15,15,26,0.95)), url("{% static 'project.jpg' %}");
+            background-size: cover; background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif; color: white; min-height: 100vh;
         }
-
         .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 50px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            box-sizing: border-box;
-            border-bottom: 1px solid rgba(192, 132, 252, 0.2);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 50px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+            box-sizing: border-box; border-bottom: 1px solid rgba(192,132,252,0.2);
         }
-
-        .logo { font-size: 1.5rem; font-weight: bold; }
-        .glow { text-shadow: 0 0 10px #c084fc, 0 0 20px #a855f7; color: white; }
-
+        .logo { font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px #c084fc; color: white; }
         .nav-links { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; }
-        .nav-links a { text-decoration: none; color: #ccc; transition: 0.3s; font-size: 0.9rem; }
-        .nav-links a:hover, .nav-links a.active { color: #c084fc; text-shadow: 0 0 8px #c084fc; }
-
-        .logout-btn {
-            background: #ff4d4d;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .logout-btn:hover { background: #ff3333; box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
-
-        .main-container {
-            padding-top: 120px;
-            display: flex;
-            justify-content: center;
-            padding-bottom: 50px;
-        }
-
+        .nav-links a { text-decoration: none; color: #ccc; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: #c084fc; }
+        .main-container { padding-top: 120px; display: flex; justify-content: center; padding-bottom: 50px; }
         .history-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            padding: 35px;
-            border-radius: 20px;
-            border: 1px solid rgba(192, 132, 252, 0.3);
-            width: 90%;
-            max-width: 1000px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(15px);
+            padding: 35px; border-radius: 20px; border: 1px solid rgba(192,132,252,0.3);
+            width: 90%; max-width: 1100px;
         }
-
-        .title {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2rem;
-            text-shadow: 0 0 15px rgba(192, 132, 252, 0.6);
-        }
-
-        .table-wrapper { overflow-x: auto; }
+        .title { text-align: center; margin-bottom: 20px; font-size: 2rem; text-shadow: 0 0 15px rgba(192,132,252,0.6); }
         
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
+        /* Search & Filter Bar */
+        .filter-bar {
+            display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; align-items: center;
         }
+        .filter-bar input, .filter-bar select {
+            padding: 10px 15px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(192,132,252,0.3); border-radius: 10px;
+            color: white; outline: none; font-size: 0.9rem;
+        }
+        .filter-bar input { flex: 1; min-width: 200px; }
+        .filter-btn {
+            padding: 10px 20px; background: #a855f7; border: none;
+            border-radius: 10px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .filter-btn:hover { background: #9333ea; }
+        .export-btn {
+            padding: 10px 20px; background: rgba(74,222,128,0.2);
+            border: 1px solid #4ade80; border-radius: 10px;
+            color: #4ade80; text-decoration: none; font-weight: bold;
+            transition: 0.3s; font-size: 0.9rem;
+        }
+        .export-btn:hover { background: rgba(74,222,128,0.3); }
 
+        table { width: 100%; border-collapse: collapse; text-align: left; }
         th {
-            padding: 18px;
-            background: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
-            border-bottom: 2px solid rgba(192, 132, 252, 0.3);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 15px 18px; background: rgba(168,85,247,0.15); color: #c084fc;
+            border-bottom: 2px solid rgba(192,132,252,0.3);
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
         }
-
-        td {
-            padding: 15px 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.95rem;
-        }
-
-        tr:hover { background: rgba(255, 255, 255, 0.02); transition: 0.2s; }
-        .amt-in { color: #4ade80; font-weight: bold; }
-        .amt-ex { color: #f87171; font-weight: bold; }
-
+        td { padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        .amt-in  { color: #4ade80; font-weight: bold; }
+        .amt-ex  { color: #f87171; font-weight: bold; }
         .status-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            background: rgba(192, 132, 252, 0.1);
-            border: 1px solid rgba(192, 132, 252, 0.3);
+            padding: 4px 10px; border-radius: 6px; font-size: 0.75rem;
+            background: rgba(192,132,252,0.1); border: 1px solid rgba(192,132,252,0.3);
         }
+        .delete-btn {
+            background: rgba(248,113,113,0.15); border: 1px solid #f87171;
+            color: #f87171; padding: 5px 12px; border-radius: 8px;
+            cursor: pointer; font-size: 0.8rem; transition: 0.3s; text-decoration: none;
+        }
+        .delete-btn:hover { background: rgba(248,113,113,0.3); }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 25px; }
+        .pagination a, .pagination span {
+            padding: 8px 14px; border-radius: 8px; text-decoration: none;
+            border: 1px solid rgba(192,132,252,0.3); color: #c084fc; font-size: 0.9rem; transition: 0.3s;
+        }
+        .pagination a:hover { background: rgba(192,132,252,0.1); }
+        .pagination .current { background: #a855f7; color: white; border-color: #a855f7; }
+
+        /* Messages */
+        .msg { padding: 10px 20px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; }
+        .msg-success { background: rgba(74,222,128,0.15); border: 1px solid #4ade80; color: #4ade80; }
+        .msg-error   { background: rgba(248,113,113,0.15); border: 1px solid #f87171; color: #f87171; }
     </style>
 </head>
 <body>
+   <!-- Navbar Start -->
 
-    <nav class="navbar">
-        <div class="logo glow">BudgetTracker</div>
-        <ul class="nav-links">
-            <li><a href="{% url 'dashboard_url' %}">Home</a></li>
-            <li><a href="{% url 'analysis_url' %}">Analysis</a></li>
-            <li><a href="{% url 'budgets_url' %}">Budgets</a></li>
-        </ul>
-       
-    </nav>
+<!-- Navbar Wrapper -->
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 30px; background-color: #0f0a19; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: sans-serif;">
+
+    <!-- Left Side: Logo & Links -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" style="text-decoration: none; font-size: 20px; font-weight: bold; color: #a855f7; margin-right: 15px;">
+            BudgetTracker
+        </a>
+
+        {% if user.is_authenticated %}
+            <!-- Links and Profile all in one Row -->
+            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Dashboard
+            </a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Transactions
+            </a>
+            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Goals
+            </a>
+            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Analysis
+            </a>
+            
+            <!-- Profile Button (Exactly like the others) -->
+            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                my profile
+            </a>
+                       <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                Budgets
+            </a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                History
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Right Side: Logout -->
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout_url' %}" style="text-decoration: none; color: #f87171; font-size: 14px; font-weight: bold;">
+                Logout
+            </a>
+        {% else %}
+            <a href="{% url 'login_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; font-size: 14px;">Login</a>
+            <a href="{% url 'signup_url' %}" style="text-decoration: none; color: white; background: #9333ea; padding: 8px 16px; border-radius: 8px; font-size: 14px;">Sign Up</a>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Navbar End -->
 
     <div class="main-container">
         <div class="history-card">
-            <h2 class="title glow">Transaction History</h2>
-            
-            <div class="table-wrapper">
+            <h2 class="title">Transaction History</h2>
+
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="msg {% if 'deleted' in msg.message %}msg-error{% else %}msg-success{% endif %}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Filter Bar -->
+            <form method="GET" action="{% url 'history_url' %}">
+                <div class="filter-bar">
+                    <input type="text" name="search" placeholder="🔍 Search description or category..." value="{{ search }}">
+                    <select name="type">
+                        <option value="">All Types</option>
+                        <option value="income"  {% if filter_type == 'income'  %}selected{% endif %}>Income</option>
+                        <option value="expense" {% if filter_type == 'expense' %}selected{% endif %}>Expense</option>
+                    </select>
+                    <button type="submit" class="filter-btn">Filter</button>
+                    <a href="{% url 'history_url' %}" class="filter-btn" style="background: rgba(255,255,255,0.1);">Reset</a>
+                    <a href="{% url 'export_csv' %}" class="export-btn">⬇ Export CSV</a>
+                </div>
+            </form>
+
+            <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
@@ -138,37 +179,58 @@
                             <th>Description</th>
                             <th>Category</th>
                             <th>Amount</th>
-                            <th>type</th>
+                            <th>Type</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="historyData">
-                        </tbody>
+                    <tbody>
+                        {% for t in page_obj %}
+                        <tr>
+                            <td>{{ t.date }}</td>
+                            <td>{{ t.description|default:"—" }}</td>
+                            <td><span class="status-badge">{{ t.category|default:"Other" }}</span></td>
+                            <td class="{% if t.type == 'income' %}amt-in{% else %}amt-ex{% endif %}">
+                                {% if t.type == 'income' %}+{% else %}-{% endif %}${{ t.amount }}
+                            </td>
+                            <td>{{ t.type|capfirst }}</td>
+                            <td>
+                                <a href="{% url 'delete_transaction' t.pk %}" class="delete-btn"
+                                   onclick="return confirm('Delete this transaction?')">🗑 Delete</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#aaa; padding: 40px;">
+                                No transactions found!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&type={{ filter_type }}">← Prev</a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}&search={{ search }}&type={{ filter_type }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&type={{ filter_type }}">Next →</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </body>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tableBody = document.getElementById('historyData');
-        const transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
-        if (transactions.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No transactions yet!</td></tr>';
-            return;
-        }
-        tableBody.innerHTML = ''; 
-        transactions.forEach(t => {
-            const row = `
-                <tr>
-                    <td>${t.date}</td>
-                    <td>${t.desc}</td>
-                    <td><span class="status-badge">${t.cat}</span></td>
-                    <td class="${t.type === 'in' ? 'amt-in' : 'amt-ex'}">${t.amt}</td>
-                    <td>${t.type === 'in' ? 'Deposit' : 'Expense'}</td>
-                </tr>
-            `;
-            tableBody.innerHTML += row;
-        });
-    });
-</script>
 </html>

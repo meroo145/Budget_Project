@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Budget',
+    'Budget.apps.BudgetConfig',
     'rest_framework',
     'corsheaders',
 ]
@@ -124,3 +124,5 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # allow back read front 
 CORS_ALLOW_ALL_ORIGINS = True
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_URL = '/login/'
