@@ -242,8 +242,11 @@
                             <button type="submit" class="add-savings-btn">+ Add</button>
                         </form>
                         {% endif %}
-                        <a href="{% url 'delete_goal_url' goal.pk %}" class="delete-btn"
-                           onclick="return confirm('Delete this goal?')">🗑</a>
+                       <form method="POST" action="{% url 'delete_goal_url' goal.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="delete-btn"
+            onclick="return confirm('Delete this goal?')">🗑</button>
+</form>
                     </div>
                 </div>
             </div>

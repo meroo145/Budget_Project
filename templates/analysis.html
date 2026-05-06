@@ -108,11 +108,11 @@
                 <p style="color: #f87171;">${{ total_expenses }}</p>
             </div>
             <div class="stat-item">
-                <h3>Net Balance</h3>
-                <p style="color: {% if total_income >= total_expenses %}#4ade80{% else %}#f87171{% endif %};">
-                    ${{ total_income|add:total_expenses }}
-                </p>
-            </div>
+    <h3>Net Balance</h3>
+    <p style="color: {% if balance >= 0 %}#4ade80{% else %}#f87171{% endif %};">
+        ${{ balance }}
+    </p>
+</div>
         </div>
 
         <!-- Bar Chart -->

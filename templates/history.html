@@ -194,8 +194,11 @@
                             </td>
                             <td>{{ t.type|capfirst }}</td>
                             <td>
-                                <a href="{% url 'delete_transaction' t.pk %}" class="delete-btn"
-                                   onclick="return confirm('Delete this transaction?')">🗑 Delete</a>
+                                <form method="POST" action="{% url 'delete_transaction' t.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                    <button type="submit" class="delete-btn"
+                                     onclick="return confirm('Delete this transaction?')">🗑 Delete</button>
+                                    </form>
                             </td>
                         </tr>
                         {% empty %}

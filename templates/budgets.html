@@ -123,8 +123,11 @@
                     {% elif b.alert %}
                         <span class="alert-badge">⚠️ Near Limit</span>
                     {% endif %}
-                    <a href="{% url 'delete_budget' b.id %}" class="delete-budget-btn"
-                       onclick="return confirm('Delete this budget?')">🗑 Delete</a>
+                    <form method="POST" action="{% url 'delete_budget' b.id %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="delete-budget-btn"
+            onclick="return confirm('Delete this budget?')">🗑 Delete</button>
+</form>
                 </div>
             </div>
 
