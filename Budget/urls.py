@@ -21,4 +21,5 @@ urlpatterns = [
     path('goals/create/',               views.create_goal,         name='create_goal_url'),
     path('goals/add-savings/<int:pk>/', views.add_savings,         name='add_savings_url'),
     path('goals/delete/<int:pk>/',      views.delete_goal,         name='delete_goal_url'),
+    path('history/edit/<int:pk>/',      views.edit_transaction,    name='edit_transaction'),
 ]
