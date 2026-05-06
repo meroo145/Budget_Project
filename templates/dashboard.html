@@ -84,14 +84,9 @@
 
 
 <script>
-/* NAVBAR SCROLL EFFECT */
-window.addEventListener("scroll", () => {
-    const nav = document.getElementById("navbar");
-    if (window.scrollY > 20) {
-        nav.classList.add("nav-scrolled");
-    } else {
-        nav.classList.remove("nav-scrolled");
-    }
+window.addEventListener("scroll", function() {
+    var nav = document.getElementById("navbar");
+    if (nav) nav.classList.toggle("nav-scrolled", window.scrollY > 20);
 });
 </script>
 
