@@ -85,6 +85,15 @@ def profile_page(request):
                 update_session_auth_hash(request, request.user)
                 messages.success(request, 'Password changed successfully!')
 
+        elif action == 'delete_account':
+            password = request.POST.get('confirm_delete_password', '')
+            if not request.user.check_password(password):
+                messages.error(request, 'Incorrect password. Account not deleted.')
+                return redirect('profile_url')
+            request.user.delete()
+            logout(request)
+            return redirect('home')
+
         return redirect('profile_url')
 
     user_tx  = Transaction.objects.filter(user=request.user)
@@ -127,13 +136,26 @@ def add_expense_view(request):
         error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
         if error:
             messages.error(request, error)
-            return redirect('add_expense_url')
+            return redirect('add.expense_url')
+
+        category_val      = request.POST.get('category')
+        new_category_name = request.POST.get('new_category', '').strip()
+
+        if category_val == 'other':
+            if not new_category_name:
+                messages.error(request, 'Please enter a category name.')
+                return redirect('add.expense_url')
+            category_obj, _ = Category.objects.get_or_create(name=new_category_name)
+            category_id = category_obj.id
+        else:
+            category_id = category_val
+
         Transaction.objects.create(
             user=request.user,
             amount=request.POST.get('amount'),
             date=request.POST.get('date'),
             type='expense',
-            category_id=request.POST.get('category'),
+            category_id=category_id,
             description=request.POST.get('description', '')
         )
         check_budget_alerts(request.user)
@@ -200,35 +222,18 @@ def edit_transaction(request, pk):
 
 @login_required(login_url='login_url')
 def create_category(request):
-    """
-    Create a new category via AJAX request.
-    Returns JSON response for frontend dynamic update.
-    """
-
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-
     name = request.POST.get('name', '').strip()
-
-    # validate empty name
     if not name:
         return JsonResponse({'error': 'Category name cannot be empty.'}, status=400)
-
-    # prevent very long names
     if len(name) > 100:
         return JsonResponse({'error': 'Category name is too long.'}, status=400)
-
-    # prevent duplicates (case-insensitive)
     category, created = Category.objects.get_or_create(
         name__iexact=name,
         defaults={'name': name}
     )
-
-    return JsonResponse({
-        'id': category.id,
-        'name': category.name,
-        'created': created
-    })
+    return JsonResponse({'id': category.id, 'name': category.name, 'created': created})
 
 
 # ==================== Analysis & Export ====================
@@ -276,11 +281,11 @@ def budgets_page(request):
     budgets     = Budget.objects.filter(user=request.user)
     budget_data = []
     for b in budgets:
-        spent   = Transaction.objects.filter(
+        spent        = Transaction.objects.filter(
             user=request.user, category=b.category, type='expense'
         ).aggregate(Sum('amount'))['amount__sum'] or 0
-        percent = min((spent / b.amount) * 100, 100) if b.amount > 0 else 0
         real_percent = (spent / b.amount) * 100 if b.amount > 0 else 0
+        percent      = min(real_percent, 100)
         budget_data.append({
             'id':        b.id,
             'category':  b.category,

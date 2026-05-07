@@ -20,7 +20,6 @@ urlpatterns = [
     path('dashboard/',  views.dashboard_page, name='dashboard_url'),
     path('profile/',    views.profile_page,   name='profile_url'),
 
-
     # ── Transactions ─────────────────────────────────────
     path('add-expense/',                 views.add_expense_view,   name='add_expense_url'),
     path('add-income/',                  views.add_income_view,    name='add_income_url'),

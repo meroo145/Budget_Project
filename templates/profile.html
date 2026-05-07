@@ -82,27 +82,12 @@
         </a>
 
         {% if user.is_authenticated %}
-            <!-- Links and Profile all in one Row -->
-            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                Dashboard
-            </a>
-            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                Goals
-            </a>
-            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                Analysis
-            </a>
-            
-            <!-- Profile Button (Exactly like the others) -->
-            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                my profile
-            </a>
-            <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                Budgets
-            </a>
-            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                History
-            </a>
+            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Dashboard</a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">History</a>
+            <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Budgets</a>
+            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Goals</a>
+            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Analysis</a>
+            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Profile</a>
         {% endif %}
     </div>
 
@@ -206,6 +191,26 @@
             </div>
 
         </div>
+
+        <!-- Delete Account -->
+        <div style="margin-top: 25px; background: rgba(248,113,113,0.04); border: 1px solid rgba(248,113,113,0.2); border-radius: 20px; padding: 30px; animation: fadeInUp 0.6s ease;">
+            <h3 style="color: #f87171; margin-bottom: 8px; font-size: 1.1rem; padding-bottom: 12px; border-bottom: 1px solid rgba(248,113,113,0.15);">🗑️ Delete Account</h3>
+            <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 20px;">This will permanently delete your account and all your data. This action cannot be undone.</p>
+            <form method="POST" action="{% url 'profile_url' %}" onsubmit="return confirm('Are you sure? This will delete your account permanently!');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_account">
+                <div class="form-group">
+                    <label style="color: #f87171;">Confirm Your Password</label>
+                    <input type="password" name="confirm_delete_password" placeholder="••••••••" required
+                           style="border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.05);">
+                </div>
+                <button type="submit"
+                        style="padding: 12px 30px; background: rgba(248,113,113,0.15); border: 1px solid #f87171; border-radius: 12px; color: #f87171; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.95rem;">
+                    🗑️ Delete My Account
+                </button>
+            </form>
+        </div>
+
     </div>
 </body>
 </html>
