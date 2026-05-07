@@ -6,22 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - BudgetTracker</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
-    
 </head>
 <body>
-    
+
     <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 8%; background: rgba(15, 15, 26, 0.95); position: sticky; top: 0; z-index: 1000;">
-    <div class="logo glow" style="font-size: 1.4rem; font-weight: bold;">BudgetTracker</div>
+        <div class="logo glow" style="font-size: 1.4rem; font-weight: bold;">BudgetTracker</div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'login_url' %}" class="btn" style="text-decoration: none;">Login</a>
+            <a href="{% url 'signup_url' %}" class="btn" style="text-decoration: none; background: rgba(168,85,247,0.3); border: 1px solid #a855f7;">Sign Up</a>
+        </div>
     </nav>
 
-<header class="home-header">
-    <h1 class="glow">Welcome to Budget App ✨</h1>
-    <p>Track your expenses, manage your budget, and visualize your financial growth in one place.</p>
-    <div id="auth-buttons">
-    <a href="{% url 'login_url' %}" class="btn">Get</a>
-    <!-- <a href="/my-budgets/" class="btn-get-started">Get Started</a> -->
-</div>
-</header>
+    <header class="home-header">
+        <h1 class="glow">Welcome to BudgetTracker ✨</h1>
+        <p>Track your expenses, manage your budget, and visualize your financial growth in one place.</p>
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <a href="{% url 'signup_url' %}" class="btn" style="text-decoration: none;">Get Started</a>
+            <a href="{% url 'login_url' %}" class="btn" style="text-decoration: none; background: transparent; border: 1px solid #c084fc; color: #c084fc;">Login</a>
+        </div>
+    </header>
 
     <section class="features-grid">
         <div class="feature-card">
@@ -30,16 +33,17 @@
             <p>Track your data and performance with real-time charts and insights.</p>
         </div>
         <div class="feature-card">
-            <span style="font-size: 2rem;">📁</span>
-            <h3 class="glow">Projects</h3>
-            <p>Organize and manage your tasks and financial goals effectively.</p>
+            <span style="font-size: 2rem;">🎯</span>
+            <h3 class="glow">Goals</h3>
+            <p>Organize and manage your financial goals and savings effectively.</p>
         </div>
         <div class="feature-card">
-            <span style="font-size: 2rem;">⚙️</span>
-            <h3 class="glow">Settings</h3>
-            <p>Customize your application experience to fit your personal needs.</p>
+            <span style="font-size: 2rem;">💰</span>
+            <h3 class="glow">Budgets</h3>
+            <p>Set budgets per category and get alerts before you overspend.</p>
         </div>
     </section>
-<script src="style.js"></script>
+
+    <script src="{% static 'style.js' %}"></script>
 </body>
 </html>

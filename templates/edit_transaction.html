@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Transaction - BudgetTracker</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(15, 15, 26, 0.9), rgba(15, 15, 26, 0.95)),
+                        url("{% static 'project.jpg' %}");
+            background-size: cover;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+
+        .edit-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #c084fc;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute; top: 15px; right: 20px;
+            color: #c084fc; text-decoration: none; font-size: 25px;
+        }
+
+        /* Type badge shown at the top of the card */
+        .type-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .type-income  { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid #4ade80; }
+        .type-expense { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid #f87171; }
+
+        .input-group { margin-bottom: 18px; text-align: left; }
+
+        .input-group label {
+            display: block; font-size: 0.8rem;
+            color: #aaaaaa; margin-bottom: 5px;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%; padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 10px;
+            color: white; outline: none; box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .input-group select option { background: #1a1a2e; }
+
+        .save-btn {
+            width: 100%; padding: 15px; background: #a855f7;
+            border: none; border-radius: 12px; color: white;
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+            margin-top: 6px;
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .cancel-link {
+            display: block; margin-top: 14px;
+            color: #aaa; font-size: 0.85rem; text-decoration: none;
+        }
+        .cancel-link:hover { color: #c084fc; }
+
+        .msg-error {
+            background: rgba(248,113,113,0.12);
+            border: 1px solid #f87171; color: #f87171;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 0.85rem; margin-bottom: 14px;
+        }
+        .msg-success {
+            background: rgba(74,222,128,0.12);
+            border: 1px solid #4ade80; color: #4ade80;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 0.85rem; margin-bottom: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="edit-card">
+        <a href="{% url 'history_url' %}" class="close-btn">&times;</a>
+
+        <h2 style="text-shadow: 0 0 10px #c084fc; margin-bottom: 6px;">Edit Transaction</h2>
+
+        <!-- Show the transaction type so the user knows what they're editing -->
+        <span class="type-badge {% if tx.type == 'income' %}type-income{% else %}type-expense{% endif %}">
+            {{ tx.type|capfirst }}
+        </span>
+
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="{% if 'error' in msg.tags %}msg-error{% else %}msg-success{% endif %}">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'edit_transaction' tx.pk %}">
+            {% csrf_token %}
+
+            <div class="input-group">
+                <label>Amount ($)</label>
+                <input type="number" name="amount" step="0.01" min="0.01"
+                       value="{{ tx.amount }}" required>
+            </div>
+
+            <div class="input-group">
+                <label>Description</label>
+                <input type="text" name="description"
+                       value="{{ tx.description }}" placeholder="Optional note...">
+            </div>
+
+            <div class="input-group">
+                <label>Date</label>
+                <input type="date" name="date" value="{{ tx.date|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="input-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="">— No category —</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}"
+                            {% if tx.category_id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="save-btn">💾 Save Changes</button>
+        </form>
+
+        <a href="{% url 'history_url' %}" class="cancel-link">← Cancel, go back to history</a>
+    </div>
+</body>
+</html>

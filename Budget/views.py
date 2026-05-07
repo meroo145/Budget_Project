@@ -5,11 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from .models import Category, Budget, Transaction, Goal, Notification
 import csv
-from django.utils import timezone
-from .models import Transaction, Goal, Budget
 
 
 # ==================== Home & Auth ====================
@@ -55,33 +54,25 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
-# ==================== Profile & Dashboard ====================
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.db.models import Sum
-from .models import Transaction, Goal, Budget
 
+# ==================== Profile & Dashboard ====================
 @login_required(login_url='login_url')
 def profile_page(request):
     if request.method == 'POST':
         action = request.POST.get('action')
-        
-        # الجزء الخاص بتحديث الاسم والإيميل
+
         if action == 'update_info':
             request.user.first_name = request.POST.get('name', '').strip()
             request.user.email      = request.POST.get('email', '').strip()
             request.user.username   = request.user.email
             request.user.save()
             messages.success(request, 'Profile updated!')
-        
-        # الجزء الجديد الخاص بتغيير كلمة المرور (المرحلة الثالثة)
+
         elif action == 'change_password':
-            old_pass = request.POST.get('old_password', '')
-            new_pass = request.POST.get('new_password', '')
+            old_pass     = request.POST.get('old_password', '')
+            new_pass     = request.POST.get('new_password', '')
             confirm_pass = request.POST.get('confirm_password', '')
-            
+
             if not request.user.check_password(old_pass):
                 messages.error(request, 'Current password is incorrect!')
             elif new_pass != confirm_pass:
@@ -93,14 +84,12 @@ def profile_page(request):
                 request.user.save()
                 update_session_auth_hash(request, request.user)
                 messages.success(request, 'Password changed successfully!')
-        
+
         return redirect('profile_url')
 
-    # حساب الإحصائيات (الكود القديم بتاعك)
     user_tx  = Transaction.objects.filter(user=request.user)
     total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
     total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
-    
     context  = {
         'total_income':   round(total_in, 2),
         'total_expenses': round(total_ex, 2),
@@ -111,20 +100,6 @@ def profile_page(request):
     }
     return render(request, 'profile.html', context)
 
-    # حساب الإحصائيات لعرضها في الصفحة (جزء الـ GET)
-    user_tx  = Transaction.objects.filter(user=request.user)
-    total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
-    total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    context  = {
-        'total_income':   round(total_in, 2),
-        'total_expenses': round(total_ex, 2),
-        'balance':        round(total_in - total_ex, 2),
-        'total_tx':       user_tx.count(),
-        'total_goals':    Goal.objects.filter(user=request.user).count(),
-        'total_budgets':  Budget.objects.filter(user=request.user).count(),
-    }
-    return render(request, 'profile.html', context)
 
 @login_required(login_url='login_url')
 def dashboard_page(request):
@@ -143,11 +118,16 @@ def dashboard_page(request):
     }
     return render(request, 'dashboard.html', context)
 
+
 # ==================== Transactions ====================
 @login_required(login_url='login_url')
 def add_expense_view(request):
     categories = Category.objects.all()
     if request.method == 'POST':
+        error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
+        if error:
+            messages.error(request, error)
+            return redirect('add_expense_url')
         Transaction.objects.create(
             user=request.user,
             amount=request.POST.get('amount'),
@@ -156,6 +136,7 @@ def add_expense_view(request):
             category_id=request.POST.get('category'),
             description=request.POST.get('description', '')
         )
+        check_budget_alerts(request.user)
         return redirect('history_url')
     return render(request, 'add.expense.html', {'categories': categories})
 
@@ -163,6 +144,10 @@ def add_expense_view(request):
 def add_income_view(request):
     categories = Category.objects.all()
     if request.method == 'POST':
+        error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
+        if error:
+            messages.error(request, error)
+            return redirect('add.income_url')
         Transaction.objects.create(
             user=request.user,
             amount=request.POST.get('amount'),
@@ -193,12 +178,58 @@ def history_page(request):
         'filter_type': filter_type,
     })
 
-# ✅ FIX: DELETE بـ POST مش GET
 @login_required(login_url='login_url')
 def delete_transaction(request, pk):
     if request.method == 'POST':
         get_object_or_404(Transaction, pk=pk, user=request.user).delete()
     return redirect('history_url')
+
+@login_required(login_url='login_url')
+def edit_transaction(request, pk):
+    tx         = get_object_or_404(Transaction, pk=pk, user=request.user)
+    categories = Category.objects.all()
+    if request.method == 'POST':
+        tx.amount      = request.POST.get('amount')
+        tx.description = request.POST.get('description', '')
+        tx.date        = request.POST.get('date')
+        tx.category_id = request.POST.get('category')
+        tx.save()
+        messages.success(request, 'Transaction updated!')
+        return redirect('history_url')
+    return render(request, 'edit_transaction.html', {'tx': tx, 'categories': categories})
+
+@login_required(login_url='login_url')
+def create_category(request):
+    """
+    Create a new category via AJAX request.
+    Returns JSON response for frontend dynamic update.
+    """
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    name = request.POST.get('name', '').strip()
+
+    # validate empty name
+    if not name:
+        return JsonResponse({'error': 'Category name cannot be empty.'}, status=400)
+
+    # prevent very long names
+    if len(name) > 100:
+        return JsonResponse({'error': 'Category name is too long.'}, status=400)
+
+    # prevent duplicates (case-insensitive)
+    category, created = Category.objects.get_or_create(
+        name__iexact=name,
+        defaults={'name': name}
+    )
+
+    return JsonResponse({
+        'id': category.id,
+        'name': category.name,
+        'created': created
+    })
+
 
 # ==================== Analysis & Export ====================
 @login_required(login_url='login_url')
@@ -238,6 +269,7 @@ def export_csv(request):
         ])
     return response
 
+
 # ==================== Budgets ====================
 @login_required(login_url='login_url')
 def budgets_page(request):
@@ -248,14 +280,17 @@ def budgets_page(request):
             user=request.user, category=b.category, type='expense'
         ).aggregate(Sum('amount'))['amount__sum'] or 0
         percent = min((spent / b.amount) * 100, 100) if b.amount > 0 else 0
+        real_percent = (spent / b.amount) * 100 if b.amount > 0 else 0
         budget_data.append({
             'id':        b.id,
             'category':  b.category,
             'amount':    b.amount,
             'spent':     round(spent, 2),
             'remaining': round(max(b.amount - spent, 0), 2),
+            'over_by':   round(max(spent - b.amount, 0), 2),
             'percent':   round(percent, 1),
             'overlimit': spent > b.amount,
+            'alert':     (not spent > b.amount) and (real_percent >= b.alert_percentage),
         })
     return render(request, 'budgets.html', {'budget_data': budget_data})
 
@@ -272,12 +307,12 @@ def create_budget_view(request):
         return redirect('budgets_url')
     return render(request, 'create_budget.html', {'categories': categories})
 
-# ✅ FIX: DELETE بـ POST مش GET
 @login_required(login_url='login_url')
 def delete_budget(request, pk):
     if request.method == 'POST':
         get_object_or_404(Budget, pk=pk, user=request.user).delete()
     return redirect('budgets_url')
+
 
 # ==================== Goals ====================
 @login_required(login_url='login_url')
@@ -306,58 +341,14 @@ def add_savings(request, pk):
             goal.save()
     return redirect('goals_url')
 
-# ✅ FIX: DELETE بـ POST مش GET
 @login_required(login_url='login_url')
 def delete_goal(request, pk):
     if request.method == 'POST':
         get_object_or_404(Goal, pk=pk, user=request.user).delete()
     return redirect('goals_url')
-# ==================== Edit Transaction ====================
-@login_required(login_url='login_url')
-def edit_transaction(request, pk):
-    tx = get_object_or_404(Transaction, pk=pk, user=request.user)
-    categories = Category.objects.all()
-    
-    if request.method == 'POST':
-        tx.amount      = request.POST.get('amount')
-        tx.description = request.POST.get('description', '')
-        tx.date        = request.POST.get('date')
-        tx.category_id = request.POST.get('category')
-        tx.save()
-        messages.success(request, 'Transaction updated!')
-        return redirect('history_url')
-    
-    return render(request, 'edit_transaction.html', {'tx': tx, 'categories': categories})
 
-# ==================== Notifications & Alerts ====================
-def check_budget_alerts(user):
-    
-    budgets = Budget.objects.filter(user=user)
-    for budget in budgets:
-        spent = Transaction.objects.filter(
-            user=user, category=budget.category, type='expense'
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        if budget.amount <= 0: continue
-        
-        percent = (spent / budget.amount) * 100
-        
-        if percent >= 100:
-            msg = f'⚠️ Over budget! {budget.category} — spent ${spent:.0f} of ${budget.amount:.0f}'
-        elif percent >= budget.alert_percentage:
-            msg = f'🔔 Budget alert! {budget.category} at {percent:.0f}% — ${spent:.0f} of ${budget.amount:.0f}'
-        else: continue
-        
-        
-        already_sent = Notification.objects.filter(
-            user=user, message=msg, created__date=timezone.now().date()
-        ).exists()
-        
-        if not already_sent:
-            Notification.objects.create(user=user, message=msg)
 
-# ==================== Validation ====================
-
+# ==================== Helpers ====================
 def validate_transaction(amount, date_str):
     try:
         amount = float(amount)
@@ -365,14 +356,32 @@ def validate_transaction(amount, date_str):
             return 'Amount must be greater than zero.'
     except (TypeError, ValueError):
         return 'Invalid amount.'
-    
     if not date_str:
         return 'Date is required.'
     return None
 
-# مثال للاستخدام في add_expense_view:
-    if request.method == 'POST':
-        error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
-    if error:
-        messages.error(request, error)
-        return redirect('add_expense_url')
+def check_budget_alerts(user):
+    budgets = Budget.objects.filter(user=user)
+    for budget in budgets:
+        spent = Transaction.objects.filter(
+            user=user, category=budget.category, type='expense'
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        if budget.amount <= 0:
+            continue
+
+        percent = (spent / budget.amount) * 100
+
+        if percent >= 100:
+            msg = f'⚠️ Over budget! {budget.category} — spent ${spent:.0f} of ${budget.amount:.0f}'
+        elif percent >= budget.alert_percentage:
+            msg = f'🔔 Budget alert! {budget.category} at {percent:.0f}% — ${spent:.0f} of ${budget.amount:.0f}'
+        else:
+            continue
+
+        already_sent = Notification.objects.filter(
+            user=user, message=msg, created__date=timezone.now().date()
+        ).exists()
+
+        if not already_sent:
+            Notification.objects.create(user=user, message=msg)

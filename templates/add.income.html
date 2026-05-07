@@ -12,11 +12,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(rgba(15, 15, 26, 0.9), rgba(15, 15, 26, 0.95)), url('project.jpg');
+            background: linear-gradient(rgba(15, 15, 26, 0.9), rgba(15, 15, 26, 0.95)),
+                        url("{% static 'project.jpg' %}");
             background-size: cover;
             font-family: 'Segoe UI', sans-serif;
             color: white;
         }
+
         .income-card {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(15px);
@@ -24,60 +26,216 @@
             border-radius: 20px;
             border: 1px solid #c084fc;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
             position: relative;
         }
+
         .close-btn {
             position: absolute; top: 15px; right: 20px;
             color: #c084fc; text-decoration: none; font-size: 25px;
         }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; font-size: 0.8rem; color: #aaaaaa; margin-bottom: 5px; }
-        .input-group input, .input-group select {
-            width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 10px;
+
+        .input-group { margin-bottom: 18px; text-align: left; }
+
+        .input-group label {
+            display: block; font-size: 0.8rem;
+            color: #aaaaaa; margin-bottom: 5px;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%; padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 10px;
             color: white; outline: none; box-sizing: border-box;
+            font-family: inherit;
         }
+
+        .input-group select option { background: #1a1a2e; }
+
+        /* ── New-category inline form ── */
+        #new-category-box {
+            display: none;
+            flex-direction: row;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        #new-category-box input {
+            flex: 1; padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            border-radius: 10px; color: white; outline: none;
+            font-size: 0.9rem;
+        }
+
+        #add-cat-btn {
+            padding: 10px 14px; background: #a855f7;
+            border: none; border-radius: 10px;
+            color: white; cursor: pointer; font-size: 0.85rem;
+            white-space: nowrap; transition: 0.2s;
+        }
+
+        #add-cat-btn:hover { background: #9333ea; }
+
+        #cat-feedback {
+            font-size: 0.75rem; margin-top: 4px;
+            min-height: 16px;
+        }
+
+        .cat-success { color: #4ade80; }
+        .cat-error   { color: #f87171; }
+
         .save-btn {
-            width: 100%; padding: 15px; background: #a855f7;
-            border: none; border-radius: 12px; color: white;
+            width: 100%; padding: 15px; background: #4ade80;
+            border: none; border-radius: 12px; color: #0f0f1a;
             font-weight: bold; cursor: pointer; transition: 0.3s;
+            margin-top: 6px;
         }
-        .save-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4); }
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 222, 128, 0.4);
+        }
+
+        .msg-error {
+            background: rgba(248,113,113,0.12);
+            border: 1px solid #f87171;
+            color: #f87171;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 0.85rem; margin-bottom: 14px;
+        }
     </style>
 </head>
 <body>
-
-
     <div class="income-card">
         <a href="{% url 'dashboard_url' %}" class="close-btn">&times;</a>
-        <h2 style="text-shadow: 0 0 10px #c084fc;">Add Income</h2>
-       <form method="POST" action="{% url 'add_income_url' %}">
-    {% csrf_token %}
-    <div class="input-group">
-        <label>Amount</label>
-        <input type="number" name="amount" placeholder="$0.00" required>
-    </div>
-    <div class="input-group">
-        <label>Description</label>
-        <input type="text" name="description" placeholder="Salary, Bonus..." required>
-    </div>
-    <div class="input-group">
-        <label>Transaction Date</label>
-        <input type="date" name="date" required>
-    </div>
-    <div class="input-group">
-        <label>Category</label>
-        <select name="category">
-            {% for cat in categories %}
-                <option value="{{ cat.id }}">{{ cat.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <button type="submit" class="save-btn">Save Income</button>
-</form>
-    </div>
-</body>
+        <h2 style="text-shadow: 0 0 10px #4ade80; margin-bottom: 20px;">Add Income</h2>
 
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="msg-error">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'add_income_url' %}" id="income-form">
+            {% csrf_token %}
+
+            <div class="input-group">
+                <label>Amount ($)</label>
+                <input type="number" name="amount" placeholder="0.00"
+                       step="0.01" min="0.01" required>
+            </div>
+
+            <div class="input-group">
+                <label>Description</label>
+                <input type="text" name="description" placeholder="e.g. Salary, Freelance...">
+            </div>
+
+            <div class="input-group">
+                <label>Transaction Date</label>
+                <input type="date" name="date" required>
+            </div>
+
+            <!-- ── Category selector ── -->
+            <div class="input-group">
+                <label>Category</label>
+                <select name="category" id="category-select">
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                    <option value="__new__">➕ Other — create new category</option>
+                </select>
+
+                <div id="new-category-box">
+                    <input type="text" id="new-cat-name" placeholder="Category name..." maxlength="100">
+                    <button type="button" id="add-cat-btn">Save</button>
+                </div>
+                <div id="cat-feedback"></div>
+            </div>
+
+            <button type="submit" class="save-btn">💾 Save Income</button>
+        </form>
+    </div>
+
+    <script>
+    (function () {
+        const select    = document.getElementById('category-select');
+        const box       = document.getElementById('new-category-box');
+        const nameInput = document.getElementById('new-cat-name');
+        const addBtn    = document.getElementById('add-cat-btn');
+        const feedback  = document.getElementById('cat-feedback');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        select.addEventListener('change', function () {
+            if (select.value === '__new__') {
+                box.style.display = 'flex';
+                nameInput.focus();
+            } else {
+                box.style.display = 'none';
+                feedback.textContent = '';
+            }
+        });
+
+        addBtn.addEventListener('click', function () {
+            const name = nameInput.value.trim();
+            if (!name) {
+                feedback.textContent = 'Please enter a category name.';
+                feedback.className = 'cat-error';
+                return;
+            }
+
+            addBtn.disabled = true;
+            addBtn.textContent = '...';
+
+            fetch("{% url 'create_category_url' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: 'name=' + encodeURIComponent(name),
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    feedback.textContent = data.error;
+                    feedback.className = 'cat-error';
+                } else {
+                    const opt = new Option(data.name, data.id, true, true);
+                    select.insertBefore(opt, select.lastElementChild);
+                    select.value = data.id;
+                    box.style.display = 'none';
+                    nameInput.value = '';
+                    feedback.textContent = '✔ "' + data.name + '" added!';
+                    feedback.className = 'cat-success';
+                }
+            })
+            .catch(function () {
+                feedback.textContent = 'Network error. Please try again.';
+                feedback.className = 'cat-error';
+            })
+            .finally(function () {
+                addBtn.disabled = false;
+                addBtn.textContent = 'Save';
+            });
+        });
+
+        document.getElementById('income-form').addEventListener('submit', function (e) {
+            if (select.value === '__new__') {
+                e.preventDefault();
+                feedback.textContent = 'Please save your new category first.';
+                feedback.className = 'cat-error';
+                nameInput.focus();
+            }
+        });
+
+        const dateInput = document.querySelector('input[name="date"]');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    })();
+    </script>
+</body>
 </html>

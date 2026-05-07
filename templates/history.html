@@ -34,11 +34,27 @@
         .filter-bar {
             display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; align-items: center;
         }
+
+
         .filter-bar input, .filter-bar select {
-            padding: 10px 15px; background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(192,132,252,0.3); border-radius: 10px;
-            color: white; outline: none; font-size: 0.9rem;
+             padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(192,132,252,0.3);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            font-size: 0.9rem;
         }
+
+        .filter-bar select option {
+            background: #1a1028;
+            color: white;
+        }
+        .filter-bar select {
+            cursor: pointer;
+        }
+
+
         .filter-bar input { flex: 1; min-width: 200px; }
         .filter-btn {
             padding: 10px 20px; background: #a855f7; border: none;
@@ -74,6 +90,24 @@
         }
         .delete-btn:hover { background: rgba(248,113,113,0.3); }
 
+
+        .edit-btn {
+            background: rgba(96,165,250,0.15);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .edit-btn:hover {
+            background: rgba(96,165,250,0.3);
+        }
+
         /* Pagination */
         .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 25px; }
         .pagination a, .pagination span {
@@ -107,9 +141,6 @@
             <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                 Dashboard
             </a>
-            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                Transactions
-            </a>
             <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                 Goals
             </a>
@@ -121,10 +152,10 @@
             <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                 my profile
             </a>
-                       <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                 Budgets
             </a>
-            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+             <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                 History
             </a>
         {% endif %}
@@ -194,6 +225,10 @@
                             </td>
                             <td>{{ t.type|capfirst }}</td>
                             <td>
+                                <a href="{% url 'edit_transaction' t.pk %}" class="edit-btn">
+                                         ✏ Edit
+                                </a>
+
                                 <form method="POST" action="{% url 'delete_transaction' t.pk %}" style="display:inline;">
                                 {% csrf_token %}
                                     <button type="submit" class="delete-btn"
