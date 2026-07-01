@@ -215,8 +215,19 @@ def add_expense_view(request):
         # via the inline AJAX form; it should already be saved by the time
         # this POST fires (the JS blocks submission until saved), but we
         # handle it defensively here too.
-        if not category_id or category_id == '__new__':
+        if category_id == '__new__':
             messages.error(request, 'Please select or create a category first.')
+            return redirect('add_expense_url')
+
+        # The '__skip__' sentinel means the user chose "Not sure -- let AI
+        # categorize it later". This saves the transaction with category=None,
+        # which is the genuine "unlabeled" data the semi-supervised training
+        # pipeline (ai/train.py) uses for self-training. It is intentionally
+        # NOT an error case.
+        if category_id == '__skip__':
+            category_id = None
+        elif not category_id:
+            messages.error(request, 'Please select a category, or choose "Not sure" to skip.')
             return redirect('add_expense_url')
 
         Transaction.objects.create(
@@ -248,8 +259,16 @@ def add_income_view(request):
 
         category_id = request.POST.get('category')
 
-        if not category_id or category_id == '__new__':
+        if category_id == '__new__':
             messages.error(request, 'Please select or create a category first.')
+            return redirect('add_income_url')
+
+        # See add_expense_view for the full explanation of this sentinel --
+        # it produces genuine unlabeled data for semi-supervised training.
+        if category_id == '__skip__':
+            category_id = None
+        elif not category_id:
+            messages.error(request, 'Please select a category, or choose "Not sure" to skip.')
             return redirect('add_income_url')
 
         Transaction.objects.create(

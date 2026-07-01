@@ -180,6 +180,10 @@
                     {% endfor %}
                     <!-- Sentinel value triggers the inline creation box -->
                     <option value="__new__">➕ Other — create new category</option>
+                    <!-- Sentinel value: saves with no category (category=None).
+                         This is what feeds real unlabeled data into the
+                         semi-supervised retraining pipeline. -->
+                    <option value="__skip__">🤖 Not sure — categorize automatically later</option>
                 </select>
 
                 <!-- Shown only when the sentinel option is selected -->
