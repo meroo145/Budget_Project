@@ -31,6 +31,7 @@
             position: relative;
         }
 
+        /* Close button returns to dashboard */
         .close-btn {
             position: absolute; top: 15px; right: 20px;
             color: #c084fc; text-decoration: none; font-size: 25px;
@@ -55,13 +56,13 @@
 
         .input-group select option { background: #1a1a2e; }
 
-        /* ── New-category inline form ── */
+        /* ── Inline new-category form (hidden by default) ── */
+        /* FIX: removed duplicate 'display: none' that was overriding flex */
         #new-category-box {
-            display: none;
-            margin-top: 8px;
             display: none;
             flex-direction: row;
             gap: 8px;
+            margin-top: 8px;
         }
 
         #new-category-box input {
@@ -81,6 +82,7 @@
 
         #add-cat-btn:hover { background: #9333ea; }
 
+        /* Feedback text shown below the category field */
         #cat-feedback {
             font-size: 0.75rem; margin-top: 4px;
             min-height: 16px;
@@ -88,6 +90,32 @@
 
         .cat-success { color: #4ade80; }
         .cat-error   { color: #f87171; }
+
+        /* ── ML suggestion badge shown below the category field ── */
+        #ml-suggestion {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            min-height: 16px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #ml-suggestion.applied { color: #4ade80; }
+
+        #apply-suggestion-btn {
+            background: rgba(96, 165, 250, 0.15);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #apply-suggestion-btn:hover { background: rgba(96, 165, 250, 0.3); }
 
         /* ── Submit button ── */
         .save-btn {
@@ -101,7 +129,7 @@
             box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4);
         }
 
-        /* Messages from Django */
+        /* Error messages from Django */
         .msg-error {
             background: rgba(248,113,113,0.12);
             border: 1px solid #f87171;
@@ -116,6 +144,7 @@
         <a href="{% url 'dashboard_url' %}" class="close-btn">&times;</a>
         <h2 style="text-shadow: 0 0 10px #c084fc; margin-bottom: 20px;">Add Expense</h2>
 
+        <!-- Show any server-side error messages -->
         {% if messages %}
             {% for msg in messages %}
                 <div class="msg-error">{{ msg }}</div>
@@ -127,13 +156,14 @@
 
             <div class="input-group">
                 <label>Amount ($)</label>
-                <input type="number" name="amount" placeholder="0.00"
+                <input type="number" name="amount" id="amount-input" placeholder="0.00"
                        step="0.01" min="0.01" required>
             </div>
 
             <div class="input-group">
                 <label>Description</label>
-                <input type="text" name="description" placeholder="e.g. Lunch, Netflix...">
+                <input type="text" name="description" id="description-input"
+                       placeholder="e.g. Lunch, Netflix...">
             </div>
 
             <div class="input-group">
@@ -148,16 +178,20 @@
                     {% for cat in categories %}
                         <option value="{{ cat.id }}">{{ cat.name }}</option>
                     {% endfor %}
-                    <!-- Sentinel option triggers the inline creation box -->
+                    <!-- Sentinel value triggers the inline creation box -->
                     <option value="__new__">➕ Other — create new category</option>
                 </select>
 
-                <!-- Shown only when "Other — create new" is selected -->
+                <!-- Shown only when the sentinel option is selected -->
                 <div id="new-category-box">
-                    <input type="text" id="new-cat-name" placeholder="Category name..." maxlength="100">
+                    <input type="text" id="new-cat-name"
+                           placeholder="Category name..." maxlength="100">
                     <button type="button" id="add-cat-btn">Save</button>
                 </div>
                 <div id="cat-feedback"></div>
+
+                <!-- ML live suggestion — filled in by JS as the user types the description -->
+                <div id="ml-suggestion"></div>
             </div>
 
             <button type="submit" class="save-btn">💾 Save Expense</button>
@@ -173,7 +207,7 @@
         const feedback  = document.getElementById('cat-feedback');
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // Show / hide the new-category box based on the selected option
+        // Show / hide the new-category box based on selected option
         select.addEventListener('change', function () {
             if (select.value === '__new__') {
                 box.style.display = 'flex';
@@ -184,7 +218,7 @@
             }
         });
 
-        // AJAX call to create the category and inject it into the <select>
+        // AJAX: create the category, then inject it as a real <option>
         addBtn.addEventListener('click', function () {
             const name = nameInput.value.trim();
             if (!name) {
@@ -193,6 +227,7 @@
                 return;
             }
 
+            // Disable button while the request is in flight
             addBtn.disabled = true;
             addBtn.textContent = '...';
 
@@ -210,13 +245,12 @@
                     feedback.textContent = data.error;
                     feedback.className = 'cat-error';
                 } else {
-                    // Add the new category as a real option and select it
+                    // Add the new option and auto-select it
                     const opt = new Option(data.name, data.id, true, true);
-                    // Insert before the sentinel option (last item)
                     select.insertBefore(opt, select.lastElementChild);
                     select.value = data.id;
 
-                    // Hide the creation box and reset it
+                    // Hide the creation box and show confirmation
                     box.style.display = 'none';
                     nameInput.value = '';
                     feedback.textContent = '✔ "' + data.name + '" added!';
@@ -233,7 +267,7 @@
             });
         });
 
-        // Prevent form submission if "Other" sentinel is still selected
+        // Block form submission if the sentinel is still selected (not yet saved)
         document.getElementById('expense-form').addEventListener('submit', function (e) {
             if (select.value === '__new__') {
                 e.preventDefault();
@@ -243,11 +277,115 @@
             }
         });
 
-        // Auto-set today's date
+        // Auto-fill today's date
         const dateInput = document.querySelector('input[name="date"]');
         if (dateInput && !dateInput.value) {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
+    })();
+    </script>
+
+    <script>
+    /*
+     * Live ML category suggestion.
+     * - Debounced on the description field so we don't fire a request
+     *   per keystroke (waits 500ms after the user stops typing).
+     * - Auto-selects the dropdown ONLY when confidence is high enough
+     *   (server decides via `auto_apply`) AND the user hasn't already
+     *   manually picked a category themselves.
+     * - Once the user manually changes the <select>, we stop overriding
+     *   it — their explicit choice always wins from that point on.
+     * - Setting select.value via JS does NOT fire a 'change' event in
+     *   plain JS, so the manual-override flag only flips on a REAL
+     *   user click/selection, never from our own auto-fill.
+     */
+    (function () {
+        const descInput      = document.getElementById('description-input');
+        const amountInput    = document.getElementById('amount-input');
+        const categorySelect = document.getElementById('category-select');
+        const suggestionBox  = document.getElementById('ml-suggestion');
+
+        let manualOverride = false;
+        let debounceTimer   = null;
+
+        categorySelect.addEventListener('change', function () {
+            manualOverride = true;
+        });
+
+        function debounce(fn, delay) {
+            return function (...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function clearSuggestion() {
+            suggestionBox.innerHTML = '';
+            suggestionBox.classList.remove('applied');
+        }
+
+        function renderSuggestion(s) {
+            suggestionBox.classList.toggle('applied', s.auto_apply && !manualOverride);
+
+            if (s.auto_apply) {
+                suggestionBox.innerHTML =
+                    (manualOverride ? '🤖 Suggested: ' : '🤖 Applied: ') +
+                    s.name + ' (' + s.confidence + '%)';
+            } else {
+                // Low confidence — show as a hint with a manual "Apply" button
+                // rather than silently changing the user's selection.
+                suggestionBox.innerHTML =
+                    '🤖 Suggested: ' + s.name + ' (' + s.confidence + '%) ' +
+                    '<button type="button" id="apply-suggestion-btn">Apply</button>';
+
+                const applyBtn = document.getElementById('apply-suggestion-btn');
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', function () {
+                        categorySelect.value = s.id;   // programmatic — does NOT set manualOverride
+                        suggestionBox.classList.add('applied');
+                    });
+                }
+            }
+
+            if (s.auto_apply && !manualOverride) {
+                categorySelect.value = s.id;
+            }
+        }
+
+        const fetchSuggestion = debounce(function () {
+            const description = descInput.value.trim();
+
+            if (description.length < 3) {
+                clearSuggestion();
+                return;
+            }
+
+            const params = new URLSearchParams({
+                description: description,
+                amount: amountInput.value || '0',
+                type: 'expense',
+            });
+
+            fetch("{% url 'predict_category_url' %}?" + params.toString())
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.suggestion) {
+                        clearSuggestion();
+                        return;
+                    }
+                    renderSuggestion(data.suggestion);
+                })
+                .catch(function () {
+                    clearSuggestion();
+                });
+        }, 500);
+
+        descInput.addEventListener('input', fetchSuggestion);
+        // Amount can shift the prediction too (e.g. large amount -> Rent),
+        // so re-run the suggestion when it changes and a description exists.
+        amountInput.addEventListener('input', function () {
+            if (descInput.value.trim().length >= 3) fetchSuggestion();
+        });
     })();
     </script>
 </body>
