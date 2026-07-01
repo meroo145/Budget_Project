@@ -1,3 +1,9 @@
+# =============================================================================
+#  views.py — BudgetTracker
+#  All view functions grouped by feature area.
+#  Every function is protected with @login_required where appropriate.
+# =============================================================================
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.models import User
@@ -10,64 +16,137 @@ from django.utils import timezone
 from .models import Category, Budget, Transaction, Goal, Notification
 import csv
 
+# ML category prediction — the model itself is loaded once by
+# Budget/apps.py:BudgetConfig.ready(), this import just gives us the
+# function that runs inference against the already-cached model.
+from ai.model_loader import predict_category_with_confidence
 
-# ==================== Home & Auth ====================
+
+# =============================================================================
+#  HOME & AUTHENTICATION
+# =============================================================================
+
 def home_page(request):
+    """Show the landing page; redirect logged-in users straight to dashboard."""
     if request.user.is_authenticated:
         return redirect('dashboard_url')
     return render(request, 'home.html')
 
+
 def signup_page(request):
+    """Register a new user account using email as the username."""
     if request.method == 'POST':
         name     = request.POST.get('name', '').strip()
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
         confirm  = request.POST.get('confirmPassword', '')
+
+        # Validate passwords match
         if password != confirm:
             messages.error(request, 'Passwords do not match!')
             return redirect('signup_url')
+
+        # Prevent duplicate accounts
         if User.objects.filter(username=email).exists():
             messages.error(request, 'Email already registered!')
             return redirect('signup_url')
+
+        # Create the user and log them in immediately
         user = User.objects.create_user(
             username=email, email=email,
             password=password, first_name=name
         )
         login(request, user)
         return redirect('dashboard_url')
+
     return render(request, 'sign.html')
 
+
 def login_page(request):
+    """Authenticate an existing user by email and password."""
     if request.user.is_authenticated:
         return redirect('dashboard_url')
+
     if request.method == 'POST':
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
-        user     = authenticate(request, username=email, password=password)
+
+        # Django uses 'username' internally; we store email there
+        user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
             return redirect('dashboard_url')
+
         messages.error(request, 'Invalid email or password!')
+
     return render(request, 'login.html')
 
+
 def logout_view(request):
+    """Log the user out and send them back to the home page."""
     logout(request)
     return redirect('home')
 
 
-# ==================== Profile & Dashboard ====================
+# =============================================================================
+#  DASHBOARD & PROFILE
+# =============================================================================
+
+@login_required(login_url='login_url')
+def dashboard_page(request):
+    """
+    Main dashboard: totals, recent transactions, active goals,
+    and any unread budget notifications.
+    """
+    user_tx  = Transaction.objects.filter(user=request.user)
+    total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # Fetch unread notifications so we can show them as warnings
+    notifications = Notification.objects.filter(
+        user=request.user, is_read=False
+    ).order_by('-created')
+
+    # Pass each notification message through Django's messages framework
+    # so the existing template {% if messages %} block picks them up
+    for notif in notifications:
+        messages.warning(request, notif.message)
+        notif.is_read = True   # Mark as read after showing once
+        notif.save()
+
+    context = {
+        'total_income':   round(total_in, 2),
+        'total_expenses': round(total_ex, 2),
+        'balance':        round(total_in - total_ex, 2),
+        # Last 5 transactions for the "Recent" table
+        'recent':         user_tx.order_by('-date')[:5],
+        # Only show incomplete goals in the progress widget
+        'goals':          Goal.objects.filter(
+                              user=request.user,
+                              saved_amount__lt=F('target_amount')
+                          )[:3],
+    }
+    return render(request, 'dashboard.html', context)
+
+
 @login_required(login_url='login_url')
 def profile_page(request):
+    """
+    User profile: update name/email, change password, or delete account.
+    Also shows a summary of the user's financial stats.
+    """
     if request.method == 'POST':
         action = request.POST.get('action')
 
+        # ── Update name and email ──────────────────────────────────────────
         if action == 'update_info':
             request.user.first_name = request.POST.get('name', '').strip()
             request.user.email      = request.POST.get('email', '').strip()
-            request.user.username   = request.user.email
+            request.user.username   = request.user.email   # keep username in sync
             request.user.save()
-            messages.success(request, 'Profile updated!')
+            messages.success(request, 'Profile updated successfully!')
 
+        # ── Change password ────────────────────────────────────────────────
         elif action == 'change_password':
             old_pass     = request.POST.get('old_password', '')
             new_pass     = request.POST.get('new_password', '')
@@ -82,9 +161,11 @@ def profile_page(request):
             else:
                 request.user.set_password(new_pass)
                 request.user.save()
+                # Keep the user logged in after a password change
                 update_session_auth_hash(request, request.user)
                 messages.success(request, 'Password changed successfully!')
 
+        # ── Delete account ─────────────────────────────────────────────────
         elif action == 'delete_account':
             password = request.POST.get('confirm_delete_password', '')
             if not request.user.check_password(password):
@@ -96,10 +177,12 @@ def profile_page(request):
 
         return redirect('profile_url')
 
+    # ── GET: build stats for the profile summary cards ─────────────────────
     user_tx  = Transaction.objects.filter(user=request.user)
     total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
     total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
-    context  = {
+
+    context = {
         'total_income':   round(total_in, 2),
         'total_expenses': round(total_ex, 2),
         'balance':        round(total_in - total_ex, 2),
@@ -110,45 +193,31 @@ def profile_page(request):
     return render(request, 'profile.html', context)
 
 
-@login_required(login_url='login_url')
-def dashboard_page(request):
-    user_tx  = Transaction.objects.filter(user=request.user)
-    total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
-    total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
-    context  = {
-        'total_income':   round(total_in, 2),
-        'total_expenses': round(total_ex, 2),
-        'balance':        round(total_in - total_ex, 2),
-        'recent':         user_tx.order_by('-date')[:5],
-        'goals':          Goal.objects.filter(
-                              user=request.user,
-                              saved_amount__lt=F('target_amount')
-                          )[:3],
-    }
-    return render(request, 'dashboard.html', context)
+# =============================================================================
+#  TRANSACTIONS
+# =============================================================================
 
-
-# ==================== Transactions ====================
 @login_required(login_url='login_url')
 def add_expense_view(request):
+    """Save a new expense transaction and check budget alerts afterwards."""
     categories = Category.objects.all()
+
     if request.method == 'POST':
+        # Validate amount and date before saving
         error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
         if error:
             messages.error(request, error)
-            return redirect('add.expense_url')
+            return redirect('add_expense_url')   # FIX: was 'add.expense_url'
 
-        category_val      = request.POST.get('category')
-        new_category_name = request.POST.get('new_category', '').strip()
+        category_id = request.POST.get('category')
 
-        if category_val == 'other':
-            if not new_category_name:
-                messages.error(request, 'Please enter a category name.')
-                return redirect('add.expense_url')
-            category_obj, _ = Category.objects.get_or_create(name=new_category_name)
-            category_id = category_obj.id
-        else:
-            category_id = category_val
+        # The '__new__' sentinel means the user typed a brand-new category
+        # via the inline AJAX form; it should already be saved by the time
+        # this POST fires (the JS blocks submission until saved), but we
+        # handle it defensively here too.
+        if not category_id or category_id == '__new__':
+            messages.error(request, 'Please select or create a category first.')
+            return redirect('add_expense_url')
 
         Transaction.objects.create(
             user=request.user,
@@ -158,91 +227,212 @@ def add_expense_view(request):
             category_id=category_id,
             description=request.POST.get('description', '')
         )
+
+        # Check if any budget thresholds were crossed and create notifications
         check_budget_alerts(request.user)
         return redirect('history_url')
+
     return render(request, 'add.expense.html', {'categories': categories})
+
 
 @login_required(login_url='login_url')
 def add_income_view(request):
+    """Save a new income transaction."""
     categories = Category.objects.all()
+
     if request.method == 'POST':
         error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
         if error:
             messages.error(request, error)
-            return redirect('add.income_url')
+            return redirect('add_income_url')    # FIX: was 'add.income_url'
+
+        category_id = request.POST.get('category')
+
+        if not category_id or category_id == '__new__':
+            messages.error(request, 'Please select or create a category first.')
+            return redirect('add_income_url')
+
         Transaction.objects.create(
             user=request.user,
             amount=request.POST.get('amount'),
             date=request.POST.get('date'),
             type='income',
-            category_id=request.POST.get('category'),
+            category_id=category_id,
             description=request.POST.get('description', '')
         )
         return redirect('history_url')
+
     return render(request, 'add.income.html', {'categories': categories})
+
 
 @login_required(login_url='login_url')
 def history_page(request):
+    """
+    Paginated transaction history with search (description / category)
+    and type filter (income / expense).
+    """
     tx          = Transaction.objects.filter(user=request.user).order_by('-date')
     search      = request.GET.get('search', '').strip()
     filter_type = request.GET.get('type', '')
+
     if search:
         tx = tx.filter(
             Q(description__icontains=search) |
             Q(category__name__icontains=search)
         )
+
     if filter_type in ['income', 'expense']:
         tx = tx.filter(type=filter_type)
+
     page_obj = Paginator(tx, 10).get_page(request.GET.get('page', 1))
+
     return render(request, 'history.html', {
         'page_obj':    page_obj,
         'search':      search,
         'filter_type': filter_type,
     })
 
-@login_required(login_url='login_url')
-def delete_transaction(request, pk):
-    if request.method == 'POST':
-        get_object_or_404(Transaction, pk=pk, user=request.user).delete()
-    return redirect('history_url')
 
 @login_required(login_url='login_url')
 def edit_transaction(request, pk):
+    """Edit amount, description, date, and category of an existing transaction."""
     tx         = get_object_or_404(Transaction, pk=pk, user=request.user)
     categories = Category.objects.all()
+
     if request.method == 'POST':
         tx.amount      = request.POST.get('amount')
         tx.description = request.POST.get('description', '')
         tx.date        = request.POST.get('date')
-        tx.category_id = request.POST.get('category')
+        tx.category_id = request.POST.get('category') or None
         tx.save()
-        messages.success(request, 'Transaction updated!')
+        messages.success(request, 'Transaction updated successfully!')
         return redirect('history_url')
+
     return render(request, 'edit_transaction.html', {'tx': tx, 'categories': categories})
+
+
+@login_required(login_url='login_url')
+def delete_transaction(request, pk):
+    """Delete a single transaction (POST only for CSRF safety)."""
+    if request.method == 'POST':
+        get_object_or_404(Transaction, pk=pk, user=request.user).delete()
+        messages.success(request, 'Transaction deleted.')
+    return redirect('history_url')
+
 
 @login_required(login_url='login_url')
 def create_category(request):
+    """
+    AJAX endpoint: POST a category name, receive JSON {id, name, created}.
+    Used by the inline category creator on the Add Expense / Add Income pages.
+    FIX: replaced get_or_create(name__iexact=...) which caused a FieldError;
+         now we filter first, then create if not found.
+    """
     if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        return JsonResponse({'error': 'Method not allowed.'}, status=405)
+
     name = request.POST.get('name', '').strip()
+
     if not name:
         return JsonResponse({'error': 'Category name cannot be empty.'}, status=400)
+
     if len(name) > 100:
-        return JsonResponse({'error': 'Category name is too long.'}, status=400)
-    category, created = Category.objects.get_or_create(
-        name__iexact=name,
-        defaults={'name': name}
-    )
-    return JsonResponse({'id': category.id, 'name': category.name, 'created': created})
+        return JsonResponse({'error': 'Category name is too long (max 100 chars).'}, status=400)
+
+    # Case-insensitive duplicate check, then create
+    existing = Category.objects.filter(name__iexact=name).first()
+    if existing:
+        return JsonResponse({'id': existing.id, 'name': existing.name, 'created': False})
+
+    category = Category.objects.create(name=name)
+    return JsonResponse({'id': category.id, 'name': category.name, 'created': True})
 
 
-# ==================== Analysis & Export ====================
+# =============================================================================
+#  ML — LIVE CATEGORY PREDICTION
+# =============================================================================
+
+# Suggestions below this confidence are still shown as a hint, but the
+# frontend will NOT auto-select the dropdown for the user — too likely
+# to be wrong and just annoying. Tune this once you've seen real
+# predict_proba distributions on your trained model.
+AUTO_APPLY_CONFIDENCE_THRESHOLD = 0.55
+
+# Very short descriptions ("a", "gy") don't carry enough signal for TF-IDF
+# to say anything meaningful — skip the model call entirely below this length.
+MIN_DESCRIPTION_LENGTH = 3
+
+
+@login_required(login_url='login_url')
+def predict_category_ajax(request):
+    """
+    AJAX endpoint called (debounced) while the user types a transaction
+    description on the Add Expense / Add Income pages.
+
+    GET params: description, amount, type ('income' | 'expense')
+    Returns: {"suggestion": {"id", "name", "confidence", "auto_apply"}} or
+             {"suggestion": null} if no confident/available prediction.
+
+    Read-only (GET) — no CSRF token needed, no state is modified.
+    Never raises to the client: any model/lookup failure just means
+    "no suggestion", so a missing/untrained model can't break the form.
+    """
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed.'}, status=405)
+
+    description = request.GET.get('description', '').strip()
+    tx_type     = request.GET.get('type', 'expense')
+
+    if len(description) < MIN_DESCRIPTION_LENGTH:
+        return JsonResponse({'suggestion': None})
+
+    try:
+        amount = float(request.GET.get('amount') or 0)
+    except ValueError:
+        amount = 0.0
+
+    try:
+        label, confidence = predict_category_with_confidence(description, amount, tx_type)
+    except FileNotFoundError:
+        # Model hasn't been trained yet — fail silently, form still works manually.
+        return JsonResponse({'suggestion': None})
+    except Exception:
+        # Any unexpected inference error — never let this break the Add Expense page.
+        return JsonResponse({'suggestion': None})
+
+    # The model predicts a category NAME (its training label); map it to an
+    # actual Category row so the frontend can select the right <option>.
+    category = Category.objects.filter(name__iexact=label).first()
+    if not category:
+        # Model predicts a label that no longer exists as a Category
+        # (renamed/deleted since training) — nothing safe to suggest.
+        return JsonResponse({'suggestion': None})
+
+    return JsonResponse({
+        'suggestion': {
+            'id':         category.id,
+            'name':       category.name,
+            'confidence': round(confidence * 100, 1),
+            'auto_apply': confidence >= AUTO_APPLY_CONFIDENCE_THRESHOLD,
+        }
+    })
+
+
+# =============================================================================
+#  ANALYSIS & EXPORT
+# =============================================================================
+
 @login_required(login_url='login_url')
 def analysis_page(request):
+    """
+    Financial analysis page: total income vs expenses,
+    and a breakdown of expenses per category for the pie chart.
+    """
     user_tx  = Transaction.objects.filter(user=request.user)
     total_in = user_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0
     total_ex = user_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
 
+    # Build category → total mapping for the doughnut chart
     expense_by_category = {}
     for t in user_tx.filter(type='expense'):
         cat_name = t.category.name if t.category else 'Other'
@@ -259,33 +449,51 @@ def analysis_page(request):
     }
     return render(request, 'analysis.html', context)
 
+
 @login_required(login_url='login_url')
 def export_csv(request):
+    """Download all of the user's transactions as a CSV file."""
     transactions = Transaction.objects.filter(user=request.user).order_by('-date')
     response     = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="transactions.csv"'
+
     writer = csv.writer(response)
     writer.writerow(['Date', 'Description', 'Category', 'Amount', 'Type'])
+
     for t in transactions:
         writer.writerow([
-            t.date, t.description,
+            t.date,
+            t.description,
             t.category.name if t.category else 'N/A',
-            t.amount, t.type
+            t.amount,
+            t.type,
         ])
+
     return response
 
 
-# ==================== Budgets ====================
+# =============================================================================
+#  BUDGETS
+# =============================================================================
+
 @login_required(login_url='login_url')
 def budgets_page(request):
+    """
+    Show all budgets for the current user with spending progress,
+    alert flags, and over-limit detection.
+    """
     budgets     = Budget.objects.filter(user=request.user)
     budget_data = []
+
     for b in budgets:
-        spent        = Transaction.objects.filter(
+        # Total expenses in this budget's category
+        spent = Transaction.objects.filter(
             user=request.user, category=b.category, type='expense'
         ).aggregate(Sum('amount'))['amount__sum'] or 0
+
         real_percent = (spent / b.amount) * 100 if b.amount > 0 else 0
-        percent      = min(real_percent, 100)
+        percent      = min(real_percent, 100)   # cap bar at 100 % visually
+
         budget_data.append({
             'id':        b.id,
             'category':  b.category,
@@ -295,13 +503,18 @@ def budgets_page(request):
             'over_by':   round(max(spent - b.amount, 0), 2),
             'percent':   round(percent, 1),
             'overlimit': spent > b.amount,
+            # Alert fires only when not already over the limit
             'alert':     (not spent > b.amount) and (real_percent >= b.alert_percentage),
         })
+
     return render(request, 'budgets.html', {'budget_data': budget_data})
+
 
 @login_required(login_url='login_url')
 def create_budget_view(request):
+    """Create a new budget for a selected category."""
     categories = Category.objects.all()
+
     if request.method == 'POST':
         Budget.objects.create(
             user=request.user,
@@ -309,83 +522,130 @@ def create_budget_view(request):
             amount=request.POST.get('amount'),
             alert_percentage=request.POST.get('alert', 80)
         )
+        messages.success(request, 'Budget created successfully!')
         return redirect('budgets_url')
+
     return render(request, 'create_budget.html', {'categories': categories})
+
 
 @login_required(login_url='login_url')
 def delete_budget(request, pk):
+    """Delete a budget (POST only)."""
     if request.method == 'POST':
         get_object_or_404(Budget, pk=pk, user=request.user).delete()
+        messages.success(request, 'Budget deleted.')
     return redirect('budgets_url')
 
 
-# ==================== Goals ====================
+# =============================================================================
+#  GOALS
+# =============================================================================
+
 @login_required(login_url='login_url')
 def goals_page(request):
+    """List all financial goals for the current user, newest first."""
     goals = Goal.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'goals.html', {'goals': goals})
 
+
 @login_required(login_url='login_url')
 def create_goal(request):
+    """Create a new savings goal from the inline form on the goals page."""
     if request.method == 'POST':
         Goal.objects.create(
             user=request.user,
             name=request.POST.get('name'),
             target_amount=request.POST.get('target_amount'),
-            deadline=request.POST.get('deadline') or None
+            deadline=request.POST.get('deadline') or None  # blank → NULL
         )
+        messages.success(request, 'Goal created successfully!')
     return redirect('goals_url')
+
 
 @login_required(login_url='login_url')
 def add_savings(request, pk):
+    """Add a savings amount to an existing goal."""
     goal = get_object_or_404(Goal, pk=pk, user=request.user)
+
     if request.method == 'POST':
         amount = request.POST.get('amount')
         if amount:
             goal.saved_amount += float(amount)
             goal.save()
+            messages.success(request, f'${float(amount):.2f} added to "{goal.name}"!')
+
     return redirect('goals_url')
+
 
 @login_required(login_url='login_url')
 def delete_goal(request, pk):
+    """Delete a goal (POST only)."""
     if request.method == 'POST':
         get_object_or_404(Goal, pk=pk, user=request.user).delete()
+        messages.success(request, 'Goal deleted.')
     return redirect('goals_url')
 
 
-# ==================== Helpers ====================
+# =============================================================================
+#  HELPER FUNCTIONS
+# =============================================================================
+
 def validate_transaction(amount, date_str):
+    """
+    Validate amount and date for both income and expense forms.
+    Returns an error string or None if everything is valid.
+    """
     try:
         amount = float(amount)
         if amount <= 0:
             return 'Amount must be greater than zero.'
     except (TypeError, ValueError):
-        return 'Invalid amount.'
+        return 'Invalid amount value.'
+
     if not date_str:
         return 'Date is required.'
-    return None
+
+    return None   # No error
+
 
 def check_budget_alerts(user):
+    """
+    Called after every expense is saved.
+    Checks all of the user's budgets and creates a Notification if a
+    threshold (alert_percentage or 100 %) is crossed — but only once per day
+    to avoid flooding.
+    """
     budgets = Budget.objects.filter(user=user)
+
     for budget in budgets:
+        if budget.amount <= 0:
+            continue   # Skip zero-amount budgets to avoid division by zero
+
         spent = Transaction.objects.filter(
             user=user, category=budget.category, type='expense'
         ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        if budget.amount <= 0:
-            continue
-
         percent = (spent / budget.amount) * 100
 
+        # Choose the appropriate alert message
         if percent >= 100:
-            msg = f'⚠️ Over budget! {budget.category} — spent ${spent:.0f} of ${budget.amount:.0f}'
+            msg = (
+                f'⚠️ Over budget! {budget.category} — '
+                f'spent ${spent:.0f} of ${budget.amount:.0f}'
+            )
         elif percent >= budget.alert_percentage:
-            msg = f'🔔 Budget alert! {budget.category} at {percent:.0f}% — ${spent:.0f} of ${budget.amount:.0f}'
+            msg = (
+                f'🔔 Budget alert! {budget.category} at {percent:.0f}% — '
+                f'${spent:.0f} of ${budget.amount:.0f}'
+            )
         else:
-            continue
+            continue   # Under threshold — no notification needed
 
+        # Avoid duplicate notifications on the same day
         already_sent = Notification.objects.filter(
-            user=user, message=msg, created__date=timezone.now().date()
+            user=user,
+            message=msg,
+            created__date=timezone.now().date()
         ).exists()
 
         if not already_sent:
