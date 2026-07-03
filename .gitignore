@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment (rebuild from requirements.txt)
+venv/
+.venv/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+
+# Environment / secrets
+.env
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
