@@ -67,3 +67,38 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.message[:30]}"
+
+
+class AIInsight(models.Model):
+    """
+    Cached output of the AI Financial Advisor (see ai/advisor.py).
+
+    We persist advice instead of regenerating it on every page load: Gemini
+    is only called when the newest row is stale or the user manually refreshes.
+    `context` stores the analyzer + insight snapshot the advice was based on,
+    so the advice stays explainable after the fact.
+    """
+    PRIORITY_CHOICES = [
+        ('low',    'Low'),
+        ('medium', 'Medium'),
+        ('high',   'High'),
+    ]
+    SOURCE_CHOICES = [
+        ('gemini',   'Gemini'),
+        ('fallback', 'Rule-based'),
+    ]
+
+    user     = models.ForeignKey(User, on_delete=models.CASCADE)
+    title    = models.CharField(max_length=200)
+    advice   = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    reason   = models.TextField(blank=True)
+    source   = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='fallback')
+    context  = models.JSONField(default=dict, blank=True)
+    created  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title} ({self.priority})"

@@ -13,13 +13,17 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from .models import Category, Budget, Transaction, Goal, Notification
+from .models import Category, Budget, Transaction, Goal, Notification, AIInsight
 import csv
 
 # ML category prediction — the model itself is loaded once by
 # Budget/apps.py:BudgetConfig.ready(), this import just gives us the
 # function that runs inference against the already-cached model.
 from ai.model_loader import predict_category_with_confidence
+
+# AI Financial Advisor — all orchestration (analyzer -> insights -> Gemini
+# -> caching) lives in the service layer; the views below just call it.
+from ai.advisor import get_advice, refresh_advice
 
 
 # =============================================================================
@@ -319,6 +323,13 @@ def edit_transaction(request, pk):
     categories = Category.objects.all()
 
     if request.method == 'POST':
+        # Same validation the add-transaction forms use, so an edit can't
+        # write a blank/negative amount or empty date straight into the DB.
+        error = validate_transaction(request.POST.get('amount'), request.POST.get('date'))
+        if error:
+            messages.error(request, error)
+            return redirect('edit_transaction', pk=pk)
+
         tx.amount      = request.POST.get('amount')
         tx.description = request.POST.get('description', '')
         tx.date        = request.POST.get('date')
@@ -438,6 +449,37 @@ def predict_category_ajax(request):
 
 
 # =============================================================================
+#  AI FINANCIAL ADVISOR
+# =============================================================================
+
+@login_required(login_url='login_url')
+def advisor_page(request):
+    """
+    Show the user's AI advice plus recent history.
+
+    Uses the CACHED advice (get_advice) — this never calls Gemini on a normal
+    page load; it only regenerates if the cache is stale. All logic lives in
+    ai/advisor.py, keeping this view a thin controller.
+    """
+    insight = get_advice(request.user)
+    history = AIInsight.objects.filter(user=request.user).order_by('-created')[:5]
+
+    return render(request, 'advisor.html', {
+        'insight': insight,
+        'history': history,
+    })
+
+
+@login_required(login_url='login_url')
+def refresh_advisor(request):
+    """Manually force a fresh Gemini call (POST only), then show the result."""
+    if request.method == 'POST':
+        refresh_advice(request.user)
+        messages.success(request, 'AI insights refreshed.')
+    return redirect('advisor_url')
+
+
+# =============================================================================
 #  ANALYSIS & EXPORT
 # =============================================================================
 
@@ -535,11 +577,34 @@ def create_budget_view(request):
     categories = Category.objects.all()
 
     if request.method == 'POST':
+        category_id = request.POST.get('category')
+
+        # Validate before hitting the DB so a bad/blank value returns a clean
+        # message instead of a 500 from FloatField/IntegerField coercion.
+        if not category_id:
+            messages.error(request, 'Please select a category.')
+            return redirect('create_budget_url')
+
+        try:
+            amount = float(request.POST.get('amount'))
+            if amount <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, 'Budget amount must be a number greater than zero.')
+            return redirect('create_budget_url')
+
+        try:
+            alert = int(request.POST.get('alert', 80))
+            if not 0 <= alert <= 100:
+                raise ValueError
+        except (TypeError, ValueError):
+            alert = 80   # fall back to the model default on bad input
+
         Budget.objects.create(
             user=request.user,
-            category_id=request.POST.get('category'),
-            amount=request.POST.get('amount'),
-            alert_percentage=request.POST.get('alert', 80)
+            category_id=category_id,
+            amount=amount,
+            alert_percentage=alert,
         )
         messages.success(request, 'Budget created successfully!')
         return redirect('budgets_url')
@@ -587,11 +652,20 @@ def add_savings(request, pk):
     goal = get_object_or_404(Goal, pk=pk, user=request.user)
 
     if request.method == 'POST':
-        amount = request.POST.get('amount')
-        if amount:
-            goal.saved_amount += float(amount)
+        # Guard the float() conversion: a non-numeric string would otherwise
+        # raise ValueError and 500 the page (the old `if amount:` only caught
+        # the empty case).
+        try:
+            amount = float(request.POST.get('amount'))
+        except (TypeError, ValueError):
+            amount = 0
+
+        if amount > 0:
+            goal.saved_amount += amount
             goal.save()
-            messages.success(request, f'${float(amount):.2f} added to "{goal.name}"!')
+            messages.success(request, f'${amount:.2f} added to "{goal.name}"!')
+        else:
+            messages.error(request, 'Please enter a valid amount to add.')
 
     return redirect('goals_url')
 

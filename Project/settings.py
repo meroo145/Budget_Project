@@ -79,3 +79,14 @@ CORS_ALLOWED_ORIGINS = config(
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
+
+# =============================================================================
+#  AI Financial Advisor (Gemini)
+# =============================================================================
+# Leave GEMINI_API_KEY empty to run fully locally: the advisor falls back to
+# deterministic rule-based advice (see ai/advisor.py). Set it (ideally via a
+# .env file, since settings uses python-decouple) to enable real Gemini output.
+#   GEMINI_API_KEY=your_key_here
+#   GEMINI_MODEL=gemini-2.0-flash
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_MODEL   = config('GEMINI_MODEL', default='gemini-2.0-flash')

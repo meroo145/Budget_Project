@@ -30,6 +30,11 @@ urlpatterns = [
     # ── Analysis ─────────────────────────────────────────────────────────────
     path('analysis/', views.analysis_page, name='analysis_url'),
 
+    # ── AI Financial Advisor ─────────────────────────────────────────────────
+    # /advisor/ shows cached advice; /advisor/refresh/ forces a new Gemini call.
+    path('advisor/',         views.advisor_page,    name='advisor_url'),
+    path('advisor/refresh/', views.refresh_advisor, name='refresh_advisor_url'),
+
     # ── Budgets ──────────────────────────────────────────────────────────────
     path('budgets/',                 views.budgets_page,       name='budgets_url'),
     path('create-budget/',           views.create_budget_view, name='create_budget_url'),

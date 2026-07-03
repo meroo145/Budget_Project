@@ -1,11 +1,18 @@
 # ai/predict.py
 
+import os
 import joblib
 import pandas as pd
 
 
-# Load the single bundled artifact (model + fitted feature pipeline)
-_bundle = joblib.load("model_bundle.pkl")
+# Load the single bundled artifact (model + fitted feature pipeline).
+# Build an ABSOLUTE path from this file's location instead of a bare
+# "model_bundle.pkl" relative to the current working directory -- the latter
+# raised FileNotFoundError whenever the process was started from anywhere
+# other than the ai/ folder (i.e. always, when run from the project root).
+_BUNDLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_bundle.pkl")
+
+_bundle = joblib.load(_BUNDLE_PATH)
 model = _bundle["model"]
 feature_builder = _bundle["feature_builder"]
 

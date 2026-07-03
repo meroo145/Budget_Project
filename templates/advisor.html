@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Advisor - BudgetTracker</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(rgba(15,15,26,0.9), rgba(15,15,26,0.95)), url("{% static 'project.jpg' %}");
+            background-size: cover; background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif; color: white;
+        }
+        .container { padding-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 25px; padding-bottom: 50px; }
+
+        .advice-card {
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(15px);
+            padding: 30px; border-radius: 20px; border: 1px solid rgba(192,132,252,0.3);
+            width: 90%; max-width: 760px;
+        }
+        .advice-card h2 { margin: 0 0 10px; color: #c084fc; text-shadow: 0 0 10px #c084fc; }
+        .advice-card p  { line-height: 1.6; color: #e5e7eb; }
+        .reason { font-size: 0.85rem; color: #9ca3af; margin-top: 15px; font-style: italic; }
+
+        .badge {
+            display: inline-block; padding: 4px 14px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .badge.high     { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid #f87171; }
+        .badge.medium   { background: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid #fbbf24; }
+        .badge.low      { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid #4ade80; }
+        .source-tag { font-size: 0.72rem; color: #9ca3af; margin-left: 10px; }
+
+        .insights-card {
+            background: rgba(168,85,247,0.05); padding: 25px; border-radius: 15px;
+            border: 1px solid rgba(192,132,252,0.2); width: 90%; max-width: 760px;
+        }
+        .insights-card h3 { color: #c084fc; margin: 0 0 15px; }
+        .insight {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .insight:last-child { border-bottom: none; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+        .dot.critical { background: #f87171; }
+        .dot.warning  { background: #fbbf24; }
+        .dot.info     { background: #60a5fa; }
+        .dot.success  { background: #4ade80; }
+
+        .btn {
+            background: #9333ea; color: white; border: none; padding: 12px 28px;
+            border-radius: 10px; font-size: 0.95rem; cursor: pointer; font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn:hover { background: #7e22ce; }
+
+        .history { width: 90%; max-width: 760px; }
+        .history h3 { color: #c084fc; }
+        .history-item {
+            background: rgba(255,255,255,0.03); padding: 12px 18px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;
+        }
+        .msg { color: #fbbf24; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar (shared inline style — matches the rest of the app) -->
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 30px; background-color: #0f0a19; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: sans-serif;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <a href="{% url 'home' %}" style="text-decoration: none; font-size: 20px; font-weight: bold; color: #a855f7; margin-right: 15px;">BudgetTracker</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Dashboard</a>
+            <a href="{% url 'goals_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Goals</a>
+            <a href="{% url 'analysis_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Analysis</a>
+            <a href="{% url 'advisor_url' %}" style="text-decoration: none; color: #c084fc; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(192,132,252,0.1); border: 1px solid rgba(192,132,252,0.3);">AI Advisor</a>
+            <a href="{% url 'profile_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">my profile</a>
+            <a href="{% url 'budgets_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Budgets</a>
+            <a href="{% url 'history_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">History</a>
+        {% endif %}
+    </div>
+    <div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout_url' %}" style="text-decoration: none; color: #f87171; font-size: 14px; font-weight: bold;">Logout</a>
+        {% else %}
+            <a href="{% url 'login_url' %}" style="text-decoration: none; color: #d1d5db; padding: 8px 16px; font-size: 14px;">Login</a>
+            <a href="{% url 'signup_url' %}" style="text-decoration: none; color: white; background: #9333ea; padding: 8px 16px; border-radius: 8px; font-size: 14px;">Sign Up</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+
+    <h2 style="text-shadow: 0 0 10px #c084fc; margin: 0;">AI Financial Advisor</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="msg">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ── Main advice card ─────────────────────────────────────────── -->
+    <div class="advice-card">
+        <span class="badge {{ insight.priority }}">{{ insight.priority }} priority</span>
+        <span class="source-tag">
+            {% if insight.source == 'gemini' %}✨ Gemini{% else %}🧮 Rule-based{% endif %}
+            · {{ insight.created|date:"M d, H:i" }}
+        </span>
+        <h2 style="margin-top: 15px;">{{ insight.title }}</h2>
+        <p>{{ insight.advice }}</p>
+        {% if insight.reason %}<p class="reason">Why: {{ insight.reason }}</p>{% endif %}
+
+        <form method="post" action="{% url 'refresh_advisor_url' %}" style="margin-top: 20px;">
+            {% csrf_token %}
+            <button type="submit" class="btn">🔄 Refresh insights</button>
+        </form>
+    </div>
+
+    <!-- ── Rule-based insights (from the analysis snapshot) ─────────── -->
+    {% if insight.context.insights %}
+    <div class="insights-card">
+        <h3>What we noticed</h3>
+        {% for item in insight.context.insights %}
+            <div class="insight">
+                <div class="dot {{ item.severity }}"></div>
+                <div>{{ item.message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── Recent advice history ────────────────────────────────────── -->
+    {% if history %}
+    <div class="history">
+        <h3>Recent advice</h3>
+        {% for h in history %}
+            <div class="history-item">
+                <span>{{ h.title }}</span>
+                <span>
+                    <span class="badge {{ h.priority }}">{{ h.priority }}</span>
+                    <span class="source-tag">{{ h.created|date:"M d, H:i" }}</span>
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>
